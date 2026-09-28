@@ -56,56 +56,61 @@
   };
 
   // ---------- Turndown (HTML → Markdown) ----------
-  var turndown = new TurndownService({
-    headingStyle: 'atx',
-    bulletListMarker: '-',
-    codeBlockStyle: 'fenced',
-    emDelimiter: '*',
-    strongDelimiter: '**',
-    hr: '---'
-  });
-  turndown.use(turndownPluginGfm.gfm);
+  // Es una función porque la sección "Crear" necesita su propia instancia con reglas extra.
+  function nuevoTurndown() {
+    var turndown = new TurndownService({
+      headingStyle: 'atx',
+      bulletListMarker: '-',
+      codeBlockStyle: 'fenced',
+      emDelimiter: '*',
+      strongDelimiter: '**',
+      hr: '---'
+    });
+    turndown.use(turndownPluginGfm.gfm);
 
-  // Celdas de tabla: todo en una línea y "|" escapado para no romper la tabla.
-  turndown.addRule('celdaSegura', {
-    filter: ['th', 'td'],
-    replacement: function (content, node) {
-      var limpio = content.replace(/\n+/g, ' ').replace(/\|/g, '\\|').trim();
-      var indice = Array.prototype.indexOf.call(node.parentNode.children, node);
-      return (indice === 0 ? '| ' : ' ') + limpio + ' |';
-    }
-  });
-  // Saltos de línea dentro de una celda → <br> (lo entiende GitHub y la mayoría de visores).
-  turndown.addRule('saltoEnCelda', {
-    filter: function (node) { return node.nodeName === 'BR' && !!node.closest && !!node.closest('td,th'); },
-    replacement: function () { return '<br>'; }
-  });
-  // Viñetas "- texto" (turndown pone "-   texto"); la sangría de subniveles
-  // se ajusta al ancho del marcador para que las listas anidadas sigan siendo válidas.
-  turndown.addRule('elementoLista', {
-    filter: 'li',
-    replacement: function (content, node, options) {
-      var padre = node.parentNode;
-      var marcador = options.bulletListMarker + ' ';
-      if (padre.nodeName === 'OL') {
-        var inicio = parseInt(padre.getAttribute('start'), 10) || 1;
-        marcador = (inicio + Array.prototype.indexOf.call(padre.children, node)) + '. ';
+    // Celdas de tabla: todo en una línea y "|" escapado para no romper la tabla.
+    turndown.addRule('celdaSegura', {
+      filter: ['th', 'td'],
+      replacement: function (content, node) {
+        var limpio = content.replace(/\n+/g, ' ').replace(/\|/g, '\\|').trim();
+        var indice = Array.prototype.indexOf.call(node.parentNode.children, node);
+        return (indice === 0 ? '| ' : ' ') + limpio + ' |';
       }
-      var sangria = new Array(marcador.length + 1).join(' ');
-      content = content.replace(/^\n+/, '').replace(/\n+$/, '\n').replace(/\n/gm, '\n' + sangria);
-      return marcador + content + (node.nextSibling && !/\n$/.test(content) ? '\n' : '');
-    }
-  });
-  // Tachado con doble tilde (~~), que es lo que entiende GitHub/GFM.
-  turndown.addRule('tachado', {
-    filter: ['del', 's', 'strike'],
-    replacement: function (content) { return content.trim() ? '~~' + content + '~~' : ''; }
-  });
-  // Las anclas vacías que Word usa como marcadores no aportan nada.
-  turndown.addRule('anclaVacia', {
-    filter: function (node) { return node.nodeName === 'A' && !node.getAttribute('href') && !node.textContent.trim(); },
-    replacement: function () { return ''; }
-  });
+    });
+    // Saltos de línea dentro de una celda → <br> (lo entiende GitHub y la mayoría de visores).
+    turndown.addRule('saltoEnCelda', {
+      filter: function (node) { return node.nodeName === 'BR' && !!node.closest && !!node.closest('td,th'); },
+      replacement: function () { return '<br>'; }
+    });
+    // Viñetas "- texto" (turndown pone "-   texto"); la sangría de subniveles
+    // se ajusta al ancho del marcador para que las listas anidadas sigan siendo válidas.
+    turndown.addRule('elementoLista', {
+      filter: 'li',
+      replacement: function (content, node, options) {
+        var padre = node.parentNode;
+        var marcador = options.bulletListMarker + ' ';
+        if (padre.nodeName === 'OL') {
+          var inicio = parseInt(padre.getAttribute('start'), 10) || 1;
+          marcador = (inicio + Array.prototype.indexOf.call(padre.children, node)) + '. ';
+        }
+        var sangria = new Array(marcador.length + 1).join(' ');
+        content = content.replace(/^\n+/, '').replace(/\n+$/, '\n').replace(/\n/gm, '\n' + sangria);
+        return marcador + content + (node.nextSibling && !/\n$/.test(content) ? '\n' : '');
+      }
+    });
+    // Tachado con doble tilde (~~), que es lo que entiende GitHub/GFM.
+    turndown.addRule('tachado', {
+      filter: ['del', 's', 'strike'],
+      replacement: function (content) { return content.trim() ? '~~' + content + '~~' : ''; }
+    });
+    // Las anclas vacías que Word usa como marcadores no aportan nada.
+    turndown.addRule('anclaVacia', {
+      filter: function (node) { return node.nodeName === 'A' && !node.getAttribute('href') && !node.textContent.trim(); },
+      replacement: function () { return ''; }
+    });
+    return turndown;
+  }
+  var turndown = nuevoTurndown();
 
   // ---------- Estado ----------
   var estado = { archivos: [], actual: 0 };
@@ -114,34 +119,40 @@
   var $ = function (id) { return document.getElementById(id); };
   var vistas = {
     inicio: $('vista-inicio'), cargando: $('vista-cargando'),
-    resultado: $('vista-resultado'), guia: $('vista-guia')
+    resultado: $('vista-resultado'), guia: $('vista-guia'),
+    crear: $('vista-crear'), documento: $('vista-documento'), datos: $('vista-datos')
   };
-  var vistaConversion = 'inicio';
+  // Cada vista pertenece a una sección del menú; al volver a una sección se abre su última vista.
+  var SECCION = {
+    inicio: 'convertir', cargando: 'convertir', resultado: 'convertir',
+    crear: 'crear', documento: 'crear', datos: 'crear', guia: 'guia'
+  };
+  var ultimaVista = { convertir: 'inicio', crear: 'crear', guia: 'guia' };
+  var seccionActual = 'convertir';
 
   function mostrar(nombre) {
     Object.keys(vistas).forEach(function (k) { vistas[k].hidden = k !== nombre; });
-    var enGuia = nombre === 'guia';
+    seccionActual = SECCION[nombre];
+    ultimaVista[seccionActual] = nombre;
     document.querySelectorAll('.nav a').forEach(function (a) {
-      if ((a.dataset.ir === 'guia') === enGuia) a.setAttribute('aria-current', 'page');
+      if (a.dataset.ir === seccionActual) a.setAttribute('aria-current', 'page');
       else a.removeAttribute('aria-current');
     });
-    if (!enGuia) vistaConversion = nombre;
     window.scrollTo(0, 0);
+    document.dispatchEvent(new CustomEvent('wordmd:vista', { detail: nombre }));
   }
 
   function irA(destino) {
-    if (destino === 'guia') mostrar('guia');
-    else mostrar(vistaConversion);
+    mostrar(ultimaVista[destino] || 'inicio');
   }
 
   document.querySelectorAll('[data-ir]').forEach(function (a) {
     a.addEventListener('click', function (e) {
       e.preventDefault();
-      history.replaceState(null, '', '#' + a.dataset.ir);
+      try { history.replaceState(null, '', '#' + a.dataset.ir); } catch (err) { /* algunos navegadores lo bloquean en file:// */ }
       irA(a.dataset.ir);
     });
   });
-  if (location.hash === '#guia') mostrar('guia');
 
   var avisoTimer;
   function aviso(texto) {
@@ -183,9 +194,13 @@
   // Evita que el navegador abra el archivo si se suelta fuera de la zona.
   window.addEventListener('dragover', function (e) { e.preventDefault(); });
   window.addEventListener('drop', function (e) {
+    var hayArchivos = e.dataTransfer && e.dataTransfer.files.length;
+    // Arrastrar texto dentro de un editor debe seguir funcionando.
+    if (!hayArchivos && e.target.closest && e.target.closest('[contenteditable="true"], textarea, input')) return;
     e.preventDefault();
-    if (!vistas.guia.hidden) return;
-    if (e.dataTransfer && e.dataTransfer.files.length) recibir(e.dataTransfer.files);
+    if (!hayArchivos) return;
+    if (seccionActual === 'convertir') recibir(e.dataTransfer.files);
+    else if (seccionActual === 'crear' && window.wordmd.alSoltar) window.wordmd.alSoltar(e.dataTransfer.files);
   });
 
   function recibir(lista) {
@@ -522,17 +537,22 @@
       .replace(/`[^`]+`/g, '<span class="c">$&</span>');
   }
 
-  // Vista previa: las rutas "imagenes/…" se sustituyen por la imagen real en memoria.
-  function vistaPrevia(a) {
-    var html = marked.parse(a.md, { gfm: true, breaks: false });
-    var dom = new DOMParser().parseFromString('<div id="r">' + html + '</div>', 'text/html');
-    var r = dom.getElementById('r');
+  // Quita lo que podría ejecutar código (scripts, iframes, atributos on*, enlaces javascript:).
+  function limpiarHtml(r) {
     r.querySelectorAll('script,iframe,object,embed,style,link,meta').forEach(function (n) { n.remove(); });
     r.querySelectorAll('*').forEach(function (n) {
       Array.prototype.slice.call(n.attributes).forEach(function (at) {
         if (/^on/i.test(at.name) || (/^(href|src)$/i.test(at.name) && /^\s*javascript:/i.test(at.value))) n.removeAttribute(at.name);
       });
     });
+  }
+
+  // Vista previa: las rutas "imagenes/…" se sustituyen por la imagen real en memoria.
+  function vistaPrevia(a) {
+    var html = marked.parse(a.md, { gfm: true, breaks: false });
+    var dom = new DOMParser().parseFromString('<div id="r">' + html + '</div>', 'text/html');
+    var r = dom.getElementById('r');
+    limpiarHtml(r);
     var porRuta = {};
     a.imagenes.forEach(function (img) { porRuta[img.ruta] = img; });
     r.querySelectorAll('img').forEach(function (img) {
@@ -597,15 +617,18 @@
   });
 
   $('btn-copiar').addEventListener('click', function () {
-    var md = estado.archivos[estado.actual].md;
-    var copiado = function () { aviso('Markdown copiado'); };
+    copiarTexto(estado.archivos[estado.actual].md, 'Markdown copiado');
+  });
+
+  function copiarTexto(texto, mensaje) {
+    var copiado = function () { aviso(mensaje); };
     if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(md).then(copiado, function () { copiarViejo(md); copiado(); });
+      navigator.clipboard.writeText(texto).then(copiado, function () { copiarViejo(texto); copiado(); });
     } else {
-      copiarViejo(md);
+      copiarViejo(texto);
       copiado();
     }
-  });
+  }
 
   function copiarViejo(texto) {
     var t = document.createElement('textarea');
@@ -629,4 +652,28 @@
   }
   botonesPestana.forEach(function (b) { b.addEventListener('click', function () { elegirPestana(b.dataset.panel); }); });
   elegirPestana('md');
+
+  // ---------- Lo que comparte con crear.js ----------
+  window.wordmd = {
+    mostrar: mostrar,
+    aviso: aviso,
+    recibir: recibir,
+    descargarBlob: descargarBlob,
+    copiarTexto: copiarTexto,
+    nuevoTurndown: nuevoTurndown,
+    prepararCodigo: prepararCodigo,
+    limpiarMarkdown: limpiarMarkdown,
+    limpiarHtml: limpiarHtml,
+    resaltar: resaltar,
+    escapar: escapar,
+    contar: contar,
+    plural: plural,
+    alSoltar: null // lo define crear.js
+  };
+
+  // Abrir directamente la guía o la sección Crear si la dirección lo pide.
+  document.addEventListener('DOMContentLoaded', function () {
+    if (location.hash === '#guia') irA('guia');
+    else if (location.hash === '#crear') irA('crear');
+  });
 })();

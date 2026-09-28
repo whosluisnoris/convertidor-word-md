@@ -12,6 +12,7 @@
   <a class="logo" href="#convertir" data-ir="convertir">word<span>.md</span></a>
   <nav class="nav" aria-label="Secciones">
     <a href="#convertir" data-ir="convertir" aria-current="page">Convertidor</a>
+    <a href="#crear" data-ir="crear">Crear</a>
     <a href="#guia" data-ir="guia">Guía</a>
   </nav>
 </header>
@@ -94,11 +95,149 @@
     </div>
   </section>
 
+  <!-- ============ CREAR: ELEGIR ============ -->
+  <section id="vista-crear" class="vista crear" hidden>
+    <div class="hero">
+      <div class="hero-circulo" aria-hidden="true"></div>
+      <div class="hero-cuadro" aria-hidden="true"></div>
+      <h1>¿Qué<br>quieres<br>crear?</h1>
+      <p>No necesitas saber programar. Tú escribes o llenas un formulario; el archivo se arma solo.</p>
+    </div>
+
+    <div class="lado">
+      <div class="opciones-crear">
+        <button type="button" class="opcion amarillo" id="crear-documento">
+          <span class="opcion-dibujo dibujo-doc" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <span class="opcion-titulo">Un documento</span>
+          <span class="opcion-texto">Títulos, párrafos, listas y tablas, como en Word. También puede llevar secciones de datos.</span>
+          <span class="opcion-borrador" id="borrador-documento" hidden></span>
+          <span class="opcion-pie"><span class="ext">.md</span><span class="flecha"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"/></svg></span></span>
+        </button>
+        <button type="button" class="opcion coral" id="crear-datos">
+          <span class="opcion-dibujo dibujo-datos" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          <span class="opcion-titulo">Datos</span>
+          <span class="opcion-texto">Fichas, listas y tablas que otros programas pueden leer.</span>
+          <span class="opcion-borrador" id="borrador-datos" hidden></span>
+          <span class="opcion-pie"><span class="ext">.json</span><span class="ext">.xml</span><span class="flecha"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"/></svg></span></span>
+        </button>
+      </div>
+
+      <div class="plantillas">
+        <h2>O empieza con una plantilla</h2>
+        <div class="plantillas-lista">
+          <button type="button" data-plantilla="productos"><span class="chip-tipo t-tabla" aria-hidden="true">Tabla</span><span><b>Lista de productos</b><small>Nombre, precio, disponible · .json</small></span></button>
+          <button type="button" data-plantilla="contactos"><span class="chip-tipo t-texto" aria-hidden="true">Aa</span><span><b>Contactos</b><small>Nombre, correo, teléfono · .json</small></span></button>
+          <button type="button" data-plantilla="configuracion"><span class="chip-tipo t-sino" aria-hidden="true">S/N</span><span><b>Configuración</b><small>Opciones que se activan o no · .xml</small></span></button>
+          <button type="button" data-plantilla="acta"><span class="chip-tipo t-titulo" aria-hidden="true">#</span><span><b>Acta de reunión</b><small>Títulos, acuerdos y pendientes · .md</small></span></button>
+        </div>
+        <label class="abrir" for="crear-abrir"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13V3M6 7l4-4 4 4M4 13v3h12v-3"/></svg>Abrir un .md, .json o .xml que ya tengas
+          <input id="crear-abrir" type="file" accept=".md,.markdown,.txt,.json,.xml" class="oculto">
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CREAR: DOCUMENTO ============ -->
+  <section id="vista-documento" class="vista editor" hidden>
+    <div class="editor-principal">
+      <div class="barra-editor" role="toolbar" aria-label="Herramientas del documento">
+        <div class="interruptor" role="group" aria-label="Vista del documento" id="doc-vistas">
+          <button type="button" data-vista="formateado" aria-pressed="true">Formateado</button>
+          <button type="button" data-vista="codigo" class="mono" aria-pressed="false">Markdown</button>
+        </div>
+        <span class="separador" aria-hidden="true"></span>
+        <button type="button" class="btn-menu amarillo" id="doc-tipo" aria-haspopup="menu" aria-expanded="false" title="Tipo de texto"><span>Párrafo</span><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+        <button type="button" class="btn-menu negro" id="doc-insertar" aria-haspopup="menu" aria-expanded="false">+ Insertar<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+        <span class="separador" aria-hidden="true"></span>
+        <div class="grupo-botones" id="doc-formato">
+          <button type="button" class="btn-icono" data-cmd="bold" aria-label="Negrita" title="Negrita (Ctrl+B)"><b>B</b></button>
+          <button type="button" class="btn-icono" data-cmd="italic" aria-label="Cursiva" title="Cursiva (Ctrl+I)"><i class="serif">I</i></button>
+          <button type="button" class="btn-icono" data-cmd="strikeThrough" aria-label="Tachado" title="Tachado"><s>S</s></button>
+          <button type="button" class="btn-icono" data-cmd="insertUnorderedList" aria-label="Lista con viñetas" title="Lista con viñetas"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 5h9M8 10h9M8 15h9"/><circle cx="3.5" cy="5" r=".8"/><circle cx="3.5" cy="10" r=".8"/><circle cx="3.5" cy="15" r=".8"/></svg></button>
+          <button type="button" class="btn-icono" data-cmd="insertOrderedList" aria-label="Lista numerada" title="Lista numerada"><b class="chico">1.</b></button>
+          <button type="button" class="btn-icono" data-cmd="enlace" aria-label="Enlace" title="Enlace (Ctrl+K)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8.5 11.5a3 3 0 0 0 4.2 0l2.6-2.6a3 3 0 0 0-4.2-4.2l-1 1M11.5 8.5a3 3 0 0 0-4.2 0l-2.6 2.6a3 3 0 0 0 4.2 4.2l1-1"/></svg></button>
+        </div>
+        <button type="button" class="btn-icono transparente empujar" id="doc-deshacer" aria-label="Deshacer" title="Deshacer (Ctrl+Z)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5L3 9l4 4M3 9h9a5 5 0 0 1 0 10h-2"/></svg></button>
+      </div>
+
+      <div class="hoja" id="doc-hoja">
+        <article class="doc-editor" id="doc-editor" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true" aria-label="Documento"></article>
+      </div>
+      <div class="hoja hoja-codigo" id="doc-codigo" hidden>
+        <div class="editor-codigo"><pre class="codigo" aria-hidden="true"></pre><textarea spellcheck="false" aria-label="Markdown del documento"></textarea></div>
+      </div>
+      <div class="error" id="doc-error" role="alert" hidden></div>
+      <input id="doc-imagen" type="file" accept="image/*" class="oculto" tabindex="-1" aria-hidden="true">
+    </div>
+
+    <aside class="panel-archivo" aria-label="Archivo">
+      <div class="tarjeta-azul tarjeta-archivo">
+        <div class="tarjeta-circulo" aria-hidden="true"></div>
+        <label for="doc-nombre">Nombre del archivo</label>
+        <div class="campo-archivo"><input id="doc-nombre" type="text" autocomplete="off" spellcheck="false"><span id="doc-ext">.md</span></div>
+        <div class="chips" id="doc-chips"></div>
+      </div>
+      <button class="btn btn-bloque btn-negro" id="doc-descargar"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3v10M6 9l4 4 4-4M4 17h12"/></svg><span>Descargar .md</span></button>
+      <button class="btn btn-bloque btn-blanco" id="doc-copiar">Copiar Markdown</button>
+      <button class="btn btn-bloque btn-borde" id="doc-datos" hidden></button>
+      <div class="consejos" id="doc-consejo"></div>
+      <div class="guardado" id="doc-guardado" aria-live="polite"><span class="punto" aria-hidden="true"></span><span class="texto">Guardado en este equipo</span></div>
+      <button type="button" class="enlace-nuevo" id="doc-nuevo">Empezar un documento nuevo</button>
+    </aside>
+  </section>
+
+  <!-- ============ CREAR: DATOS ============ -->
+  <section id="vista-datos" class="vista editor" hidden>
+    <div class="editor-principal">
+      <div class="barra-editor" role="toolbar" aria-label="Herramientas de datos">
+        <div class="interruptor" role="group" aria-label="Vista de los datos" id="datos-vistas">
+          <button type="button" data-vista="formulario" aria-pressed="true">Formulario</button>
+          <button type="button" data-vista="codigo" class="mono" aria-pressed="false" id="datos-vista-codigo">JSON</button>
+        </div>
+        <span class="separador" aria-hidden="true"></span>
+        <button type="button" class="btn-menu amarillo" id="datos-agregar" aria-haspopup="menu" aria-expanded="false">+ Agregar campo<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+        <button type="button" class="btn-suave" id="datos-excel"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="11" height="13" rx="2"/><path d="M8 4V2.5h5V4M8 9h5M8 12.5h5"/></svg>Pegar desde Excel</button>
+        <label class="btn-suave" for="datos-abrir"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13V3M6 7l4-4 4 4M4 13v3h12v-3"/></svg>Abrir archivo
+          <input id="datos-abrir" type="file" accept=".json,.xml" class="oculto">
+        </label>
+        <button type="button" class="btn-icono transparente empujar" id="datos-deshacer" aria-label="Deshacer" title="Deshacer (Ctrl+Z)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5L3 9l4 4M3 9h9a5 5 0 0 1 0 10h-2"/></svg></button>
+      </div>
+
+      <div class="hoja hoja-datos" id="datos-hoja">
+        <div id="datos-form"></div>
+      </div>
+      <div class="hoja hoja-codigo" id="datos-codigo" hidden>
+        <div class="editor-codigo"><pre class="codigo" aria-hidden="true"></pre><textarea spellcheck="false" aria-label="Código de los datos"></textarea></div>
+      </div>
+      <div class="error" id="datos-error" role="alert" hidden></div>
+    </div>
+
+    <aside class="panel-archivo" aria-label="Archivo">
+      <div class="tarjeta-azul tarjeta-archivo tarjeta-coral">
+        <div class="tarjeta-circulo" aria-hidden="true"></div>
+        <label for="datos-nombre">Nombre del archivo</label>
+        <div class="campo-archivo"><input id="datos-nombre" type="text" autocomplete="off" spellcheck="false"><span id="datos-ext">.json</span></div>
+        <div class="etiqueta-tarjeta" id="datos-formato-titulo">Guardar como</div>
+        <div class="formato-archivo" role="group" aria-labelledby="datos-formato-titulo" id="datos-formatos">
+          <button type="button" data-formato="json" aria-pressed="true">.json</button>
+          <button type="button" data-formato="xml" aria-pressed="false">.xml</button>
+        </div>
+        <label class="raiz-xml" id="datos-raiz-caja" hidden>Etiqueta principal <input id="datos-raiz" type="text" autocomplete="off" spellcheck="false"></label>
+      </div>
+      <div class="chips chips-claros" id="datos-chips"></div>
+      <button class="btn btn-bloque btn-negro" id="datos-descargar"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3v10M6 9l4 4 4-4M4 17h12"/></svg><span>Descargar .json</span></button>
+      <button class="btn btn-bloque btn-blanco" id="datos-copiar">Copiar JSON</button>
+      <div class="consejos" id="datos-consejo"></div>
+      <div class="guardado" id="datos-guardado" aria-live="polite"><span class="punto" aria-hidden="true"></span><span class="texto">Guardado en este equipo</span></div>
+      <button type="button" class="enlace-nuevo" id="datos-nuevo">Empezar datos nuevos</button>
+    </aside>
+  </section>
+
   <!-- ============ GUÍA ============ -->
   <section id="vista-guia" class="vista guia" hidden>
     <div class="guia-hero">
       <h1>Cómo usarlo y cómo preparar tu Word</h1>
-      <p>Markdown solo entiende estructura: títulos, listas, tablas, énfasis. Si tu Word usa los estilos correctos, el resultado queda perfecto a la primera.</p>
+      <p>Markdown solo entiende estructura: títulos, listas, tablas, énfasis. Si tu Word usa los estilos correctos, el resultado queda perfecto a la primera. Y si prefieres empezar desde cero, en <b>Crear</b> puedes escribir documentos y armar archivos de datos.</p>
     </div>
 
     <div class="guia-grid">
@@ -160,6 +299,43 @@
           <li>Archivos <code>.doc</code> antiguos: ábrelos en Word y usa <i>Guardar como › .docx</i>.</li>
         </ul>
       </article>
+
+      <article class="guia-bloque blanco guia-ancho">
+        <h2>Crear documentos y datos</h2>
+        <div class="guia-columnas">
+          <div>
+            <h3>Un documento (.md)</h3>
+            <ol>
+              <li>Ve a <b>Crear › Un documento</b> y escribe como en Word.</li>
+              <li>Elige el tipo de texto en el botón amarillo (<i>Párrafo</i>, <i>Título 1</i>, <i>Cita</i>…) o escribe <code>#</code> y un espacio al inicio de una línea.</li>
+              <li>Con <b>+ Insertar</b> agregas tablas, imágenes y <b>secciones de datos</b> en JSON o XML. Se llenan como un formulario y en el <code>.md</code> quedan como <code>```json</code> o <code>```xml</code>.</li>
+              <li>El botón <b>Markdown</b> muestra el texto tal cual se guarda; puedes corregirlo ahí y volver a <b>Formateado</b> (Ctrl+M).</li>
+            </ol>
+          </div>
+          <div>
+            <h3>Datos (.json o .xml)</h3>
+            <ol>
+              <li>Ve a <b>Crear › Datos</b> o elige una plantilla.</li>
+              <li>Pulsa <b>+ Agregar campo</b> y elige qué quieres guardar. Ponle el nombre que quieras: la app escribe el nombre técnico por ti.</li>
+              <li>Para muchas filas usa una <b>Tabla</b>. Puedes pegar celdas copiadas de Excel directamente en ella.</li>
+              <li>Elige <b>.json</b> o <b>.xml</b> en <i>Guardar como</i> y pulsa <b>Descargar</b>.</li>
+            </ol>
+          </div>
+        </div>
+        <table class="tabla-guia">
+          <thead><tr><th>Tipo de campo</th><th>Para qué sirve</th><th>En JSON</th><th>En XML</th></tr></thead>
+          <tbody>
+            <tr><td><b>Texto</b></td><td>Nombres, direcciones, notas</td><td><code>"nombre": "Ana"</code></td><td><code>&lt;nombre&gt;Ana&lt;/nombre&gt;</code></td></tr>
+            <tr><td><b>Número</b></td><td>Precios, cantidades</td><td><code>"precio": 35</code></td><td><code>&lt;precio&gt;35&lt;/precio&gt;</code></td></tr>
+            <tr><td><b>Sí / No</b></td><td>Algo que se cumple o no</td><td><code>"activo": true</code></td><td><code>&lt;activo&gt;true&lt;/activo&gt;</code></td></tr>
+            <tr><td><b>Fecha</b></td><td>Un día del calendario</td><td><code>"fecha": "2026-09-28"</code></td><td><code>&lt;fecha&gt;2026-09-28&lt;/fecha&gt;</code></td></tr>
+            <tr><td><b>Lista</b></td><td>Varias palabras</td><td><code>["Wifi", "Terraza"]</code></td><td><code>&lt;elemento&gt;</code> por cada una</td></tr>
+            <tr><td><b>Tabla</b></td><td>Filas con las mismas columnas</td><td><code>[{ … }, { … }]</code></td><td>una etiqueta por fila</td></tr>
+            <tr><td><b>Grupo</b></td><td>Varios campos juntos</td><td><code>{ … }</code></td><td>etiquetas dentro de otra</td></tr>
+          </tbody>
+        </table>
+        <p class="nota">Lo que escribes se guarda solo en este navegador, en tu computadora. Si una sección de datos tiene un error al corregirla a mano, la app te marca la línea antes de volver a la vista con formato.</p>
+      </article>
     </div>
 
     <div class="guia-pie">
@@ -171,11 +347,25 @@
 
 <div class="aviso-flotante" id="toast" role="status" aria-live="polite" hidden></div>
 
+<dialog class="dialogo" id="dialogo" aria-labelledby="dialogo-titulo">
+  <form method="dialog">
+    <h2 id="dialogo-titulo"></h2>
+    <p id="dialogo-texto"></p>
+    <input id="dialogo-entrada" type="text" autocomplete="off" aria-labelledby="dialogo-titulo">
+    <textarea id="dialogo-area" rows="8" spellcheck="false" aria-labelledby="dialogo-titulo"></textarea>
+    <div class="dialogo-botones">
+      <button class="btn btn-blanco" value="cancelar">Cancelar</button>
+      <button class="btn btn-negro" value="ok" id="dialogo-ok">Aceptar</button>
+    </div>
+  </form>
+</dialog>
+
 <script src="vendor/mammoth.browser.min.js"></script>
 <script src="vendor/turndown.js"></script>
 <script src="vendor/turndown-plugin-gfm.js"></script>
 <script src="vendor/marked.min.js"></script>
 <script src="vendor/jszip.min.js"></script>
 <script src="app.js"></script>
+<script src="crear.js"></script>
 </body>
 </html>

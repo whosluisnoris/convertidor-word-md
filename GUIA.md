@@ -1,6 +1,6 @@
 # Guía de word.md
 
-Markdown solo entiende estructura: títulos, listas, tablas, énfasis. Si tu Word usa los estilos correctos, el resultado queda perfecto a la primera.
+Markdown solo entiende estructura: títulos, listas, tablas, énfasis. Si tu Word usa los estilos correctos, el resultado queda perfecto a la primera. Y si prefieres empezar desde cero, en **Crear** puedes escribir documentos y armar archivos de datos.
 
 > Esta guía también está dentro de la app, en la pestaña **Guía**.
 
@@ -54,14 +54,44 @@ No necesita internet: puedes copiar la carpeta completa a una memoria USB y usar
 - Tablas de contenido automáticas (en Markdown sobran: los títulos ya son el índice).
 - Archivos `.doc` antiguos: ábrelos en Word y usa *Archivo › Guardar como › Documento de Word (.docx)*.
 
-## 5. Plantilla de ejemplo
+## 5. Crear documentos y datos
+
+En la pestaña **Crear** eliges entre **Un documento** (`.md`) o **Datos** (`.json` o `.xml`). También hay plantillas y un botón para abrir un `.md`, `.json` o `.xml` que ya tengas.
+
+### Un documento (.md)
+
+1. Escribe como en Word.
+2. Elige el tipo de texto en el botón amarillo (*Párrafo*, *Título 1*, *Cita*…) o escribe `#` y un espacio al inicio de una línea.
+3. Con **+ Insertar** agregas tablas, imágenes y **secciones de datos** en JSON o XML. Se llenan como un formulario y en el `.md` quedan como un bloque ```` ```json ```` o ```` ```xml ````.
+4. El botón **Markdown** muestra el texto tal cual se guarda. Puedes corregirlo ahí y volver a **Formateado** (Ctrl+M).
+5. **Descargar solo los datos** guarda las secciones de datos como archivos aparte.
+
+### Datos (.json o .xml)
+
+1. Pulsa **+ Agregar campo** y elige qué quieres guardar. Ponle el nombre que quieras: la app escribe el nombre técnico por ti ("Fecha de apertura" → `fecha_de_apertura`).
+2. Para muchas filas usa una **Tabla**. Puedes pegar celdas copiadas de Excel directamente en ella, o usar **Pegar desde Excel**.
+3. Elige **.json** o **.xml** en *Guardar como* y pulsa **Descargar**.
+
+| Tipo de campo | Para qué sirve | En JSON | En XML |
+|---|---|---|---|
+| **Texto** | Nombres, direcciones, notas | `"nombre": "Ana"` | `<nombre>Ana</nombre>` |
+| **Número** | Precios, cantidades | `"precio": 35` | `<precio>35</precio>` |
+| **Sí / No** | Algo que se cumple o no | `"activo": true` | `<activo>true</activo>` |
+| **Fecha** | Un día del calendario | `"fecha": "2026-09-28"` | `<fecha>2026-09-28</fecha>` |
+| **Lista** | Varias palabras | `["Wifi", "Terraza"]` | un `<elemento>` por cada una |
+| **Tabla** | Filas con las mismas columnas | `[{ … }, { … }]` | una etiqueta por fila |
+| **Grupo** | Varios campos juntos | `{ … }` | etiquetas dentro de otra |
+
+Lo que escribes se guarda solo en este navegador, en tu computadora. Si corriges el código a mano y tiene un error, la app te marca la línea antes de volver al formulario.
+
+## 6. Plantilla de ejemplo
 
 `ejemplo/plantilla.docx` usa todos los elementos soportados. Úsala así:
 
 - **Para aprender:** conviértela y compara el Word con el Markdown.
 - **Como base:** ábrela en Word, borra el contenido y escribe el tuyo. Los estilos *Cita* y *Código* ya están creados.
 
-## 6. Problemas frecuentes
+## 7. Problemas frecuentes
 
 | Problema | Solución |
 |---|---|
@@ -71,3 +101,5 @@ No necesita internet: puedes copiar la carpeta completa a una memoria USB y usar
 | Una imagen no se ve en la vista previa | Está en formato EMF/WMF/TIFF. En Word: clic derecho › *Guardar como imagen* › PNG, y vuelve a insertarla. |
 | La tabla sale desalineada | Tiene celdas combinadas. Sepáralas en Word (*Diseño › Dividir celdas*). |
 | No pasa nada al soltar el archivo | Asegúrate de soltarlo sobre la página. Si abriste el archivo desde un .zip, descomprime la carpeta primero. |
+| No puedo volver al formulario desde el código | El JSON o XML tiene un error. Corrige la línea marcada en rojo (suele faltar una coma, unas comillas o una etiqueta de cierre). |
+| Mi documento de Crear desapareció | Se guarda en el navegador. Si borraste los datos de navegación o usas otro navegador, no estará. Descarga el archivo para tener una copia. |
