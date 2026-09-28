@@ -1,6 +1,6 @@
 # word.md — Convertidor de Word a Markdown
 
-**Convierte archivos `.docx` a Markdown en tu computadora.** Sin internet, sin instalar nada y sin subir tus documentos a ningún sitio: todo ocurre dentro de tu navegador.
+**Convierte archivos `.docx` a Markdown en tu computadora, y crea documentos `.md` y archivos de datos `.json`/`.xml` sin saber programar.** Sin internet, sin instalar nada y sin subir tus documentos a ningún sitio: todo ocurre dentro de tu navegador.
 
 ![Pantalla de inicio de word.md](docs/capturas/inicio.png)
 
@@ -37,6 +37,16 @@ Listo. Puedes copiar la carpeta a una memoria USB y usarla en cualquier computad
 
 Lo que Markdown no admite se pierde: colores, fuentes, encabezados y pies de página, cuadros de texto, celdas combinadas y comentarios.
 
+## Crear documentos y datos
+
+En la pestaña **Crear** puedes empezar desde cero:
+
+- **Un documento** (`.md`): escribes como en Word y eliges el tipo de texto (párrafo, títulos, cita, código) en un menú. Cambia a la vista **Markdown** para ver o corregir el texto tal cual se guarda.
+- **Secciones de datos dentro del documento**: *Insertar › Datos en JSON/XML* agrega una tabla o un formulario que se guarda como un bloque ```` ```json ```` o ```` ```xml ```` en el `.md`.
+- **Datos** (`.json` o `.xml`): un formulario con campos de texto, número, sí/no, fecha, listas, tablas y grupos. Puedes pegar celdas de Excel y cambiar entre JSON y XML con un clic.
+
+Todo se guarda automáticamente en tu navegador. Si corriges el código a mano y hay un error, la app marca la línea antes de volver a la vista con formato.
+
 ## Prepara bien tu Word
 
 El resultado depende de que el Word use **estilos**, no solo formato. Lo más importante:
@@ -59,6 +69,7 @@ Tus documentos **nunca salen de tu computadora**. La página no hace ninguna con
 ```
 index.html        la app (ábrela con doble clic)
 app.js            lógica de conversión
+crear.js          sección Crear: editor de documentos y de datos (JSON/XML)
 styles.css        diseño
 vendor/           librerías locales: mammoth, turndown, marked, jszip
 ejemplo/          plantilla.docx de ejemplo
@@ -77,7 +88,8 @@ Para ejecutar las pruebas (requiere Node, solo para desarrollar):
 ```bash
 cd herramientas
 npm install
-npm run probar:todo
+npm run probar:todo    # convertidor
+npm run probar:crear   # sección Crear
 ```
 
 ## Créditos
