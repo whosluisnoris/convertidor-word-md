@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>word.md — Convertidor de Word a Markdown</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%232F4BFF'/%3E%3Ctext x='16' y='22' font-family='Segoe UI' font-weight='800' font-size='15' fill='white' text-anchor='middle'%3EM%E2%86%93%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="barra">
+  <a class="logo" href="#convertir" data-ir="convertir">word<span>.md</span></a>
+  <nav class="nav" aria-label="Secciones">
+    <a href="#convertir" data-ir="convertir" aria-current="page">Convertir</a>
+    <a href="#guia" data-ir="guia">Guía</a>
+  </nav>
+</header>
+
+<main>
+  <!-- ============ INICIO ============ -->
+  <section id="vista-inicio" class="vista inicio">
+    <div class="hero">
+      <div class="hero-circulo" aria-hidden="true"></div>
+      <div class="hero-cuadro" aria-hidden="true"></div>
+      <h1>Tu Word,<br>ahora en<br>Markdown.</h1>
+      <p>Gratis, sin instalar nada y sin internet. Tus archivos nunca salen de tu computadora.</p>
+    </div>
+
+    <div class="lado">
+      <label class="soltar" id="soltar" for="entrada">
+        <span class="fichas" aria-hidden="true">
+          <span class="ficha f1"></span><span class="ficha f2"></span><span class="ficha f3">.docx</span>
+        </span>
+        <span class="soltar-titulo">Suelta tus archivos</span>
+        <span class="soltar-sub">Uno o varios .docx a la vez</span>
+        <span class="btn btn-negro">Elegir archivos</span>
+        <input id="entrada" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple class="oculto">
+      </label>
+      <div class="error" id="error-inicio" role="alert" hidden></div>
+      <ol class="pasos">
+        <li class="paso amarillo"><b>1</b>Suelta el .docx</li>
+        <li class="paso coral"><b>2</b>Revisa el resultado</li>
+        <li class="paso negro"><b>3</b>Descarga tu .md</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============ CONVIRTIENDO ============ -->
+  <section id="vista-cargando" class="vista cargando" hidden>
+    <div class="fichas grande girando" aria-hidden="true">
+      <span class="ficha f1"></span><span class="ficha f2"></span><span class="ficha f3">.md</span>
+    </div>
+    <p id="texto-cargando" aria-live="polite">Convirtiendo…</p>
+  </section>
+
+  <!-- ============ RESULTADO ============ -->
+  <section id="vista-resultado" class="vista resultado" hidden>
+    <div class="panel-izq">
+      <div class="tarjeta-azul">
+        <div class="tarjeta-circulo" aria-hidden="true"></div>
+        <div class="listo">¡Listo!</div>
+        <div class="nombre" id="res-nombre"></div>
+        <div class="chips" id="res-chips"></div>
+      </div>
+
+      <div class="archivos" id="res-archivos" hidden>
+        <div class="archivos-titulo" id="res-archivos-titulo"></div>
+        <div class="archivos-lista" id="res-archivos-lista" role="tablist" aria-label="Archivos convertidos"></div>
+      </div>
+
+      <button class="btn btn-bloque btn-negro" id="btn-descargar"></button>
+      <button class="btn btn-bloque btn-blanco" id="btn-todos" hidden>Descargar todos (.zip)</button>
+      <button class="btn btn-bloque btn-blanco" id="btn-copiar">Copiar Markdown</button>
+      <div class="consejos" id="res-consejos" hidden></div>
+      <label class="otro" for="entrada-otro">
+        + Convertir otro
+        <input id="entrada-otro" type="file" accept=".docx" multiple class="oculto">
+      </label>
+    </div>
+
+    <div class="panel-der">
+      <div class="pestanas-movil" role="tablist" aria-label="Ver">
+        <button role="tab" aria-selected="true" data-panel="md">Markdown</button>
+        <button role="tab" aria-selected="false" data-panel="vista">Vista previa</button>
+      </div>
+      <div class="columna col-md" data-col="md">
+        <span class="etiqueta">Markdown</span>
+        <pre class="codigo" id="res-md" tabindex="0" aria-label="Markdown generado"></pre>
+      </div>
+      <div class="columna col-vista" data-col="vista">
+        <span class="etiqueta">Vista previa</span>
+        <article class="previa" id="res-previa"></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GUÍA ============ -->
+  <section id="vista-guia" class="vista guia" hidden>
+    <div class="guia-hero">
+      <h1>Cómo usarlo y cómo preparar tu Word</h1>
+      <p>Markdown solo entiende estructura: títulos, listas, tablas, énfasis. Si tu Word usa los estilos correctos, el resultado queda perfecto a la primera.</p>
+    </div>
+
+    <div class="guia-grid">
+      <article class="guia-bloque amarillo">
+        <h2>Usar el convertidor</h2>
+        <ol>
+          <li>Abre <code>index.html</code> con doble clic. Se abre en tu navegador (Chrome o Edge).</li>
+          <li>Arrastra uno o varios archivos <code>.docx</code> a la zona blanca, o pulsa <b>Elegir archivos</b>.</li>
+          <li>Revisa el Markdown y la vista previa. Lee los consejos amarillos si aparecen.</li>
+          <li>Pulsa <b>Descargar</b>. Si el documento tiene imágenes recibirás un <code>.zip</code> con el <code>.md</code> y una carpeta <code>imagenes/</code>; descomprímelo y mantén ambos juntos.</li>
+        </ol>
+        <p class="nota">No necesita internet: puedes copiar la carpeta completa a una memoria USB y usarla en cualquier computadora.</p>
+      </article>
+
+      <article class="guia-bloque blanco">
+        <h2>Así se traduce cada cosa</h2>
+        <table class="tabla-guia">
+          <thead><tr><th>En Word usa…</th><th>Queda en Markdown</th></tr></thead>
+          <tbody>
+            <tr><td>Estilo <b>Título 1</b></td><td><code># Título</code></td></tr>
+            <tr><td>Estilo <b>Título 2</b> … <b>Título 6</b></td><td><code>##</code> … <code>######</code></td></tr>
+            <tr><td>Estilo <b>Título</b> (portada)</td><td><code># Título</code></td></tr>
+            <tr><td><b>Negrita</b> (Ctrl+N)</td><td><code>**texto**</code></td></tr>
+            <tr><td><i>Cursiva</i> (Ctrl+K)</td><td><code>*texto*</code></td></tr>
+            <tr><td><s>Tachado</s></td><td><code>~~texto~~</code></td></tr>
+            <tr><td>Botón de viñetas</td><td><code>- elemento</code></td></tr>
+            <tr><td>Botón de numeración</td><td><code>1. elemento</code></td></tr>
+            <tr><td>Hipervínculo (Ctrl+Alt+K)</td><td><code>[texto](url)</code></td></tr>
+            <tr><td>Tabla</td><td><code>| a | b |</code></td></tr>
+            <tr><td>Estilo <b>Cita</b></td><td><code>&gt; cita</code></td></tr>
+            <tr><td>Estilo <b>Código</b></td><td>bloque <code>```</code></td></tr>
+            <tr><td>Imagen “En línea con el texto”</td><td><code>![](imagenes/…)</code></td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="guia-bloque azul">
+        <h2>Reglas de oro</h2>
+        <ul>
+          <li><b>Títulos con estilos, no con formato.</b> Selecciona el texto y elige <i>Título 1</i>, <i>Título 2</i>… en <i>Inicio › Estilos</i>. Un texto grande y en negrita se queda como texto normal.</li>
+          <li><b>No saltes niveles.</b> Después de un Título 1 va un Título 2, no un Título 4.</li>
+          <li><b>Listas con los botones</b> de viñetas o numeración. No escribas guiones o números a mano. Usa Tab para crear subniveles.</li>
+          <li><b>Tablas sencillas.</b> La primera fila es el encabezado. Evita combinar o dividir celdas y no pongas tablas dentro de tablas.</li>
+          <li><b>Imágenes “En línea con el texto”</b> (Formato de imagen › Ajustar texto). Añade texto alternativo con clic derecho › Ver texto alternativo.</li>
+          <li><b>Una idea por párrafo.</b> Usa Enter para separar párrafos; no uses líneas vacías para dar espacio.</li>
+          <li><b>Código:</b> crea un estilo de párrafo llamado exactamente <i>Código</i> (fuente Consolas) y aplícalo a cada línea. La plantilla de ejemplo ya lo trae.</li>
+        </ul>
+      </article>
+
+      <article class="guia-bloque coral">
+        <h2>Lo que se pierde</h2>
+        <ul>
+          <li>Colores, fuentes, tamaños y resaltados.</li>
+          <li>Encabezados, pies de página y números de página.</li>
+          <li>Cuadros de texto, formas, SmartArt, WordArt y gráficos (conviértelos en imagen primero).</li>
+          <li>Celdas combinadas y alineación de tablas.</li>
+          <li>Comentarios y control de cambios (acéptalos antes de convertir).</li>
+          <li>Tablas de contenido automáticas (en Markdown sobran: los títulos ya son el índice).</li>
+          <li>Archivos <code>.doc</code> antiguos: ábrelos en Word y usa <i>Guardar como › .docx</i>.</li>
+        </ul>
+      </article>
+    </div>
+
+    <div class="guia-pie">
+      <p>¿Quieres un ejemplo? En la carpeta <code>ejemplo/</code> está <b>plantilla.docx</b>, que usa todos los elementos soportados. Ábrelo en Word para copiar sus estilos, o conviértelo aquí para ver el resultado.</p>
+      <a class="btn btn-negro" href="#convertir" data-ir="convertir">Ir a convertir</a>
+    </div>
+  </section>
+</main>
+
+<div class="aviso-flotante" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="vendor/mammoth.browser.min.js"></script>
+<script src="vendor/turndown.js"></script>
+<script src="vendor/turndown-plugin-gfm.js"></script>
+<script src="vendor/marked.min.js"></script>
+<script src="vendor/jszip.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "word-md-herramientas",
+  "private": true,
+  "description": "Herramientas de desarrollo de word.md (la app no las necesita).",
+  "scripts": {
+    "plantilla": "node generar-plantilla.js ../ejemplo/plantilla.docx",
+    "desordenado": "node -e \"require('fs').mkdirSync('salida',{recursive:true})\" && node generar-desordenado.js salida/desordenado.docx",
+    "probar": "node probar.js ../ejemplo/plantilla.docx",
+    "probar:todo": "npm run desordenado && node probar.js salida/desordenado.docx ../ejemplo/plantilla.docx notas.txt"
+  },
+  "devDependencies": {
+    "docx": "^9.0.0",
+    "jsdom": "^24.0.0"
+  }
+}
