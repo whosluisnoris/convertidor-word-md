@@ -26,6 +26,7 @@ Una página web **estática** que convierte archivos `.docx` a Markdown **dentro
 | `vendor/` | Librerías de terceros, versiones fijas. Ver `vendor/LICENSES.md`. |
 | `ejemplo/plantilla.docx` | Word de ejemplo con todos los elementos soportados. Se genera con `herramientas/generar-plantilla.js`. |
 | `GUIA.md` | La misma guía de `index.html`, en Markdown, para leerla en GitHub. **Si cambias una, cambia la otra.** |
+| `docs/capturas/` | Capturas usadas en el README. Si cambias el diseño, vuelve a generarlas (ver "Cómo probar"). |
 | `herramientas/` | Solo para desarrollo (Node): generar los `.docx` de prueba y probar de extremo a extremo con jsdom. |
 
 ## Flujo de conversión (`app.js`)
