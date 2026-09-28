@@ -456,6 +456,28 @@
     };
   }
 
+  // Filas de Excel que ya traen su tipo (número, sí/no, texto, fecha "aaaa-mm-dd") → tabla.
+  function tablaDesdeCeldas(filas) {
+    if (!filas || !filas.length) return null;
+    var titulos = filas[0], datosF = filas.slice(1), columnas = [];
+    for (var j = 0; j < titulos.length; j++) {
+      var valores = datosF.map(function (f) { return f[j]; }).filter(function (v) { return v !== null && v !== undefined && v !== ''; });
+      var t = titulos[j];
+      columnas.push(columna(t === null || t === undefined || t === '' ? 'Columna ' + (j + 1) : String(t), tipoComun(valores) || 'texto'));
+    }
+    return {
+      tipo: 'tabla', fila: 'elemento', columnas: columnas,
+      filas: datosF.map(function (f) {
+        return columnas.map(function (c, j) {
+          var v = f[j];
+          if (v === null || v === undefined || v === '') return vacioDe(c.tipo);
+          if (c.tipo === 'texto') return typeof v === 'boolean' ? (v ? 'Sí' : 'No') : String(v);
+          return v;
+        });
+      })
+    };
+  }
+
   // Reglas del "fence" de Markdown: devuelve cada sección ```json / ```xml con su línea de inicio.
   function seccionesDeDatos(md) {
     var lineas = md.split('\n'), secciones = [], abierta = null;
@@ -674,27 +696,21 @@
 
   function mostrarError(id, texto) { var e = $(id); e.textContent = texto || ''; e.hidden = !texto; }
 
-  // ---------- Guardar en este equipo (localStorage) ----------
-  var CLAVE_GUARDADO = { documento: 'wordmd.crear.documento', datos: 'wordmd.crear.datos' };
-  function leerGuardado(k) {
-    try { var t = localStorage.getItem(CLAVE_GUARDADO[k]); return t ? JSON.parse(t) : null; }
-    catch (e) { return null; }
+  // ---------- Guardado: lo hace pestanas.js; aquí solo se avisa del cambio y se pinta el estado ----------
+  function avisarCambio() { if (W.cambio) W.cambio(); }
+  function indicador(estadoGuardado) {
+    ['doc-guardado', 'datos-guardado'].forEach(function (id) {
+      var caja = $(id);
+      caja.dataset.estado = estadoGuardado;
+      caja.querySelector('.texto').textContent = {
+        guardando: 'Guardando…',
+        ok: 'Guardado en este equipo',
+        parcial: 'Guardado sin las imágenes (no caben)',
+        error: 'No se pudo guardar: el espacio del navegador está lleno'
+      }[estadoGuardado];
+    });
   }
-  function escribirGuardado(k, v) {
-    try { localStorage.setItem(CLAVE_GUARDADO[k], JSON.stringify(v)); return true; }
-    catch (e) { return false; }
-  }
-  var relojes = {};
-  function indicador(id, estadoGuardado) {
-    var caja = $(id);
-    caja.dataset.estado = estadoGuardado;
-    caja.querySelector('.texto').textContent = {
-      guardando: 'Guardando…',
-      ok: 'Guardado en este equipo',
-      parcial: 'Guardado sin las imágenes (son muy grandes)',
-      error: 'No se pudo guardar en este equipo'
-    }[estadoGuardado];
-  }
+  W.indicarGuardado = indicador;
 
   // =====================================================================
   // 3. Formulario de datos (se usa en "Datos" y dentro de los documentos)
@@ -965,7 +981,8 @@
   // =====================================================================
   // 4. Editor de datos (.json / .xml)
   // =====================================================================
-  var datos = { nodo: nuevoNodo('grupo'), formato: 'json', raiz: 'datos', vista: 'formulario', historial: [], codigo: null, cargado: false };
+  var datos = { nodo: nuevoNodo('grupo'), formato: 'json', raiz: 'datos', vista: 'formulario', historial: [], codigo: null };
+  var historiales = {}; // el historial de deshacer de cada pestaña, mientras la app está abierta
   var formDatos = $('datos-form');
   var codigoDatos = editorCodigo($('datos-codigo').querySelector('.editor-codigo'), resaltarJson);
   var ctxDatos = { formato: function () { return datos.formato; }, cambio: cambioDatos };
@@ -1018,23 +1035,17 @@
     if (tipo !== 'valor') instantanea();
     if (tipo === 'estructura') pintarDatos();
     else pintarPanelDatos();
-    guardarLuego('datos');
+    avisarCambio();
   }
 
-  function guardarDatos() {
+  // Lo que pestanas.js guarda de la pestaña de datos.
+  function estadoDatos() {
     var codigo = datos.vista === 'codigo' ? codigoDatos.valor() : null;
-    return escribirGuardado('datos', {
+    return {
       nombre: $('datos-nombre').value, formato: datos.formato, raiz: datos.raiz, nodo: datos.nodo,
       // Si se estaba corrigiendo el código, se guarda tal cual (aunque todavía tenga errores).
       codigo: codigo !== null && codigo !== datos.codigo ? codigo : null
-    }) ? 'ok' : 'error';
-  }
-
-  function guardarLuego(k) {
-    var id = k === 'documento' ? 'doc-guardado' : 'datos-guardado';
-    indicador(id, 'guardando');
-    clearTimeout(relojes[k]);
-    relojes[k] = setTimeout(function () { indicador(id, k === 'documento' ? guardarDocumento() : guardarDatos()); }, 500);
+    };
   }
 
   // Aplica lo escrito en la vista de código. Devuelve false si tiene errores (y los marca).
@@ -1048,7 +1059,7 @@
       if (r.nombre) datos.raiz = r.nombre;
       datos.codigo = t;
       instantanea();
-      guardarLuego('datos');
+      avisarCambio();
       mostrarError('datos-error', '');
       return true;
     } catch (e) {
@@ -1090,7 +1101,7 @@
     } else {
       pintarDatos();
     }
-    guardarLuego('datos');
+    avisarCambio();
   }
 
   function cargarDatos(nodo, opciones) {
@@ -1098,25 +1109,24 @@
     datos.nodo = nodo;
     datos.formato = opciones.formato || 'json';
     datos.raiz = opciones.raiz || 'datos';
-    datos.historial = [];
-    datos.cargado = true;
+    datos.historial = (opciones.id && historiales[opciones.id]) || [];
+    if (opciones.id) historiales[opciones.id] = datos.historial;
     $('datos-nombre').value = opciones.nombre || 'datos';
     instantanea();
     datos.vista = 'codigo'; // fuerza el cambio de vista
     codigoDatos.poner('');
     datos.codigo = '';
     verVistaDatos('formulario');
-    guardarLuego('datos');
   }
 
   // Abre un .json/.xml. Si tiene errores, se abre en la vista de código con la línea marcada.
-  function cargarDatosTexto(texto, formato, nombre) {
+  function cargarDatosTexto(texto, formato, nombre, id) {
     try {
       var r = leerDatos(texto, formato);
-      cargarDatos(r.nodo, { formato: formato, raiz: r.nombre || 'datos', nombre: nombre });
+      cargarDatos(r.nodo, { formato: formato, raiz: r.nombre || 'datos', nombre: nombre, id: id });
     } catch (e) {
       if (!(e instanceof ErrorDatos)) throw e;
-      cargarDatos(nuevoNodo('grupo'), { formato: formato, nombre: nombre });
+      cargarDatos(nuevoNodo('grupo'), { formato: formato, nombre: nombre, id: id });
       verVistaDatos('codigo');
       codigoDatos.poner(texto);
       datos.codigo = null;
@@ -1125,14 +1135,10 @@
     }
   }
 
-  function abrirDatos() {
-    if (!datos.cargado) {
-      var g = leerGuardado('datos');
-      if (g && g.codigo) cargarDatosTexto(g.codigo, g.formato, g.nombre);
-      else if (g && g.nodo) cargarDatos(g.nodo, g);
-      else cargarDatos(nuevoNodo('grupo'), {});
-    }
-    W.mostrar('datos');
+  // Pone en el editor los datos de una pestaña (registro guardado por pestanas.js).
+  function cargarRegistroDatos(reg) {
+    if (reg.codigo) cargarDatosTexto(reg.codigo, reg.formato || 'json', reg.nombre, reg.id);
+    else cargarDatos(reg.nodo || nuevoNodo('grupo'), reg);
   }
 
   document.querySelectorAll('#datos-vistas button').forEach(function (b) {
@@ -1144,11 +1150,11 @@
   $('datos-agregar').addEventListener('click', function () {
     menuTipos($('datos-agregar'), AGREGABLES, '¿Qué quieres guardar?', function (tipo) { agregarCampo(datos.nodo, tipo, ctxDatos); });
   });
-  codigoDatos.area.addEventListener('input', function () { mostrarError('datos-error', ''); guardarLuego('datos'); });
-  $('datos-nombre').addEventListener('input', function () { guardarLuego('datos'); });
+  codigoDatos.area.addEventListener('input', function () { mostrarError('datos-error', ''); avisarCambio(); });
+  $('datos-nombre').addEventListener('input', avisarCambio);
   $('datos-raiz').addEventListener('input', function () {
     datos.raiz = nombreXml($('datos-raiz').value.trim() || 'datos');
-    guardarLuego('datos');
+    avisarCambio();
   });
   $('datos-raiz').addEventListener('change', function () { $('datos-raiz').value = datos.raiz; });
   $('datos-deshacer').addEventListener('click', function () {
@@ -1159,7 +1165,7 @@
     datos.nodo = foto.nodo;
     datos.raiz = foto.raiz;
     pintarDatos();
-    guardarLuego('datos');
+    avisarCambio();
   });
   $('datos-excel').addEventListener('click', function () {
     pedir({
@@ -1185,7 +1191,7 @@
     });
   });
   $('datos-abrir').addEventListener('change', function () {
-    abrirArchivos(this.files);
+    W.abrirArchivos(this.files);
     this.value = '';
   });
   $('datos-descargar').addEventListener('click', function () {
@@ -1199,15 +1205,11 @@
     if (datos.vista === 'codigo' && !aplicarCodigoDatos()) return;
     W.copiarTexto(textoDatos(), datos.formato.toUpperCase() + ' copiado');
   });
-  $('datos-nuevo').addEventListener('click', function () {
-    if (tieneContenido(datos.nodo) && !window.confirm('Se borrarán los datos actuales. ¿Empezar de cero?')) return;
-    cargarDatos(nuevoNodo('grupo'), {});
-  });
 
   // =====================================================================
   // 5. Editor de documentos (.md con secciones de datos)
   // =====================================================================
-  var doc = { vista: 'formateado', bloques: {}, siguiente: 1, imagenes: {}, rango: null, codigo: null, cargado: false };
+  var doc = { vista: 'formateado', bloques: {}, siguiente: 1, imagenes: {}, rango: null, codigo: null, consejos: [] };
   var editor = $('doc-editor');
   var codigoDoc = editorCodigo($('doc-codigo').querySelector('.editor-codigo'), resaltarMd);
   try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch (e) { /* navegador antiguo */ }
@@ -1359,20 +1361,42 @@
   function cargarDocumento(md, opciones) {
     opciones = opciones || {};
     doc.imagenes = opciones.imagenes || {};
-    doc.cargado = true;
+    doc.consejos = opciones.consejos || [];
     $('doc-nombre').value = opciones.nombre || 'documento';
     var avisos = [];
     doc.vista = 'formateado';
     cargarEnEditor(md, avisos);
+    // Las etiquetas con acentos de las secciones de datos se guardan aparte (el .md solo tiene claves).
+    (opciones.etiquetas || []).forEach(function (viejo, i) {
+      var n = editor.querySelectorAll('[data-bloque]')[i];
+      var b = n && doc.bloques[n.getAttribute('data-bloque')];
+      if (b && viejo && b.formato === viejo.formato) { heredarEtiquetas(b.nodo, viejo.nodo); repintarBloque(n.getAttribute('data-bloque')); }
+    });
+    ['doc-tipo', 'doc-insertar'].forEach(function (id) { $(id).disabled = false; });
+    document.querySelectorAll('#doc-formato button').forEach(function (b) { b.disabled = false; });
     $('doc-hoja').hidden = false;
     $('doc-codigo').hidden = true;
     document.querySelectorAll('#doc-vistas button').forEach(function (b) {
       b.setAttribute('aria-pressed', b.dataset.vista === 'formateado' ? 'true' : 'false');
     });
     mostrarError('doc-error', avisos.join(' '));
+    pintarConsejosOrigen();
     pintarPanelDoc();
-    guardarLuego('documento');
   }
+
+  // Consejos de la conversión (Word, Excel, PowerPoint), hasta que la persona los cierre.
+  function pintarConsejosOrigen() {
+    var caja = $('doc-origen');
+    caja.hidden = !doc.consejos.length;
+    var lista = caja.querySelector('ul');
+    lista.innerHTML = '';
+    doc.consejos.forEach(function (c) { lista.appendChild(el('li', { texto: c })); });
+  }
+  $('doc-origen-cerrar').addEventListener('click', function () {
+    doc.consejos = [];
+    pintarConsejosOrigen();
+    avisarCambio();
+  });
 
   function verVistaDoc(vista) {
     if (vista === doc.vista) return;
@@ -1418,7 +1442,7 @@
   function cambioDoc() {
     clearTimeout(relojPanel);
     relojPanel = setTimeout(pintarPanelDoc, 250);
-    guardarLuego('documento');
+    avisarCambio();
   }
 
   function pintarPanelDoc() {
@@ -1446,23 +1470,13 @@
     $('doc-consejo').appendChild(document.createTextNode(' ' + consejo[1]));
   }
 
-  function guardarDocumento() {
+  // Lo que pestanas.js guarda de la pestaña de documento.
+  function estadoDocumento() {
     var md = markdownActual();
     var imagenes = {};
     rutasUsadas(md).forEach(function (r) { imagenes[r] = doc.imagenes[r]; });
-    var base = { nombre: $('doc-nombre').value, md: md };
-    if (escribirGuardado('documento', Object.assign({ imagenes: imagenes }, base))) return 'ok';
-    return escribirGuardado('documento', base) ? 'parcial' : 'error';
-  }
-
-  function abrirDocumento() {
-    if (!doc.cargado) {
-      var g = leerGuardado('documento');
-      if (g) cargarDocumento(g.md || '', g);
-      else cargarDocumento('', {});
-    }
-    W.mostrar('documento');
-    if (doc.vista === 'formateado') setTimeout(function () { editor.focus(); }, 0);
+    var etiquetas = Array.prototype.map.call(editor.querySelectorAll('[data-bloque]'), function (n) { return doc.bloques[n.getAttribute('data-bloque')]; });
+    return { nombre: $('doc-nombre').value, md: md, imagenes: imagenes, etiquetas: etiquetas, consejos: doc.consejos };
   }
 
   // ---------- Selección y tipo de texto ----------
@@ -1730,7 +1744,7 @@
     cambioDoc();
   });
   codigoDoc.area.addEventListener('input', function () { mostrarError('doc-error', ''); cambioDoc(); });
-  $('doc-nombre').addEventListener('input', function () { guardarLuego('documento'); });
+  $('doc-nombre').addEventListener('input', avisarCambio);
 
   $('doc-descargar').addEventListener('click', function () {
     var md = markdownActual();
@@ -1767,11 +1781,6 @@
       aviso('Descargadas ' + plural(secciones.length, 'sección', 'secciones') + ' de datos');
     });
   });
-  $('doc-nuevo').addEventListener('click', function () {
-    if (markdownActual().trim() && !window.confirm('Se borrará el documento actual. ¿Empezar uno nuevo?')) return;
-    cargarDocumento('', {});
-    editor.focus();
-  });
 
   // Ctrl+M cambia entre la vista con formato y la de código.
   document.addEventListener('keydown', function (e) {
@@ -1781,122 +1790,33 @@
   });
 
   // =====================================================================
-  // 6. Pantalla "¿Qué quieres crear?", plantillas y abrir archivos
+  // 6. Lo que usan los demás archivos
   // =====================================================================
-  var PLANTILLAS = {
-    productos: function () {
-      cargarDatos({
-        tipo: 'grupo', campos: [
-          campo('Nombre', { tipo: 'texto', valor: 'Café La Esquina' }),
-          campo('Teléfono', { tipo: 'texto', valor: '55 1234 5678' }),
-          campo('Abierto hoy', { tipo: 'sino', valor: true }),
-          campo('Servicios', { tipo: 'lista', tipoElem: 'texto', valor: ['Wifi', 'Terraza', 'Para llevar'] }),
-          campo('Productos', {
-            tipo: 'tabla', fila: 'producto',
-            columnas: [columna('Nombre', 'texto'), columna('Precio', 'numero'), columna('Disponible', 'sino')],
-            filas: [['Café americano', 35, true], ['Capuchino', 48, true], ['Pan de elote', 30, false]]
-          })
-        ]
-      }, { nombre: 'productos', formato: 'json', raiz: 'tienda' });
-      W.mostrar('datos');
-    },
-    contactos: function () {
-      cargarDatos({
-        tipo: 'grupo', campos: [
-          campo('Contactos', {
-            tipo: 'tabla', fila: 'contacto',
-            columnas: [columna('Nombre', 'texto'), columna('Correo', 'texto'), columna('Teléfono', 'texto'), columna('Es cliente', 'sino')],
-            filas: [['Ana López', 'ana@ejemplo.com', '55 1111 2222', true], ['Luis Pérez', 'luis@ejemplo.com', '55 3333 4444', false]]
-          })
-        ]
-      }, { nombre: 'contactos', formato: 'json', raiz: 'agenda' });
-      W.mostrar('datos');
-    },
-    configuracion: function () {
-      cargarDatos({
-        tipo: 'grupo', campos: [
-          campo('Nombre de la app', { tipo: 'texto', valor: 'Mi tienda' }),
-          campo('Idioma', { tipo: 'texto', valor: 'es' }),
-          campo('Modo oscuro', { tipo: 'sino', valor: false }),
-          campo('Máximo de usuarios', { tipo: 'numero', valor: 25 }),
-          campo('Avisos', { tipo: 'grupo', campos: [campo('Por correo', { tipo: 'sino', valor: true }), campo('Por SMS', { tipo: 'sino', valor: false })] })
-        ]
-      }, { nombre: 'configuracion', formato: 'xml', raiz: 'configuracion' });
-      W.mostrar('datos');
-    },
-    acta: function () {
-      cargarDocumento('# Acta de reunión\n\n**Fecha:** ' + hoy() + ' · **Equipo:** Ventas\n\n## Asistentes\n\n- Ana\n- Luis\n\n' +
-        '## Acuerdos\n\n1. Enviar la propuesta el viernes\n2. Revisar precios con Finanzas\n\n## Pendientes\n\n' +
-        '```json\n[\n  { "tarea": "Propuesta", "responsable": "Ana", "hecho": false },\n  { "tarea": "Precios", "responsable": "Luis", "hecho": true }\n]\n```\n',
-        { nombre: 'acta-de-reunion' });
-      W.mostrar('documento');
-    }
+  W.editorDoc = {
+    cargar: function (reg) { cargarDocumento(reg.md || '', reg); },
+    estado: estadoDocumento,
+    enfocar: function () { if (doc.vista === 'formateado') editor.focus(); else codigoDoc.area.focus(); }
   };
-  var PLANTILLA_DE_DATOS = { productos: true, contactos: true, configuracion: true };
-
-  document.querySelectorAll('[data-plantilla]').forEach(function (b) {
-    b.addEventListener('click', function () {
-      var id = b.dataset.plantilla;
-      var ocupado = PLANTILLA_DE_DATOS[id]
-        ? (datos.cargado ? tieneContenido(datos.nodo) : !!(leerGuardado('datos') || {}).nodo)
-        : (doc.cargado ? !!markdownActual().trim() : !!((leerGuardado('documento') || {}).md || '').trim());
-      if (ocupado && !window.confirm('La plantilla reemplaza lo que tienes guardado. ¿Continuar?')) return;
-      PLANTILLAS[id]();
-    });
-  });
-  $('crear-documento').addEventListener('click', abrirDocumento);
-  $('crear-datos').addEventListener('click', abrirDatos);
-  $('crear-abrir').addEventListener('change', function () {
-    abrirArchivos(this.files);
-    this.value = '';
-  });
-
-  function abrirArchivos(lista) {
-    var archivo = lista && lista[0];
-    if (!archivo) return;
-    var nombre = archivo.name, base = nombre.replace(/\.[^.]+$/, '');
-    if (/\.docx$/i.test(nombre)) { W.recibir(lista); return; }
-    var formato = /\.(md|markdown|txt)$/i.test(nombre) ? 'md' : /\.json$/i.test(nombre) ? 'json' : /\.xml$/i.test(nombre) ? 'xml' : null;
-    if (!formato) { aviso('Solo se pueden abrir archivos .md, .json o .xml'); return; }
-    var ocupado = formato === 'md'
-      ? doc.cargado && !!markdownActual().trim()
-      : datos.cargado && tieneContenido(datos.nodo);
-    if (ocupado && !window.confirm('Abrir “' + nombre + '” reemplaza lo que tienes ahora. ¿Continuar?')) return;
-    leerTexto(archivo).then(function (texto) {
-      texto = texto.replace(/^\uFEFF/, '');
-      if (formato === 'md') {
-        cargarDocumento(texto, { nombre: base });
-        W.mostrar('documento');
-      } else {
-        cargarDatosTexto(texto, formato, base);
-        W.mostrar('datos');
-      }
-      aviso('Abierto ' + nombre);
-    });
-  }
-  W.alSoltar = abrirArchivos;
-
-  // Al entrar a "Crear" se muestra con qué se quedó la última vez.
-  document.addEventListener('wordmd:vista', function (e) {
-    if (e.detail !== 'crear') return;
-    var gDoc = doc.cargado ? { nombre: $('doc-nombre').value, md: markdownActual() } : leerGuardado('documento');
-    var gDatos = datos.cargado ? { nombre: $('datos-nombre').value, formato: datos.formato, nodo: datos.nodo } : leerGuardado('datos');
-    var bd = $('borrador-documento'), bt = $('borrador-datos');
-    bd.hidden = !(gDoc && (gDoc.md || '').trim());
-    if (!bd.hidden) bd.textContent = 'Sigue con ' + nombreArchivo(gDoc.nombre, 'documento') + '.md';
-    bt.hidden = !(gDatos && gDatos.nodo && tieneContenido(gDatos.nodo));
-    if (!bt.hidden) bt.textContent = 'Sigue con ' + nombreArchivo(gDatos.nombre, 'datos') + '.' + (gDatos.formato || 'json');
-  });
+  W.editorDatos = {
+    cargar: cargarRegistroDatos,
+    estado: estadoDatos
+  };
+  W.datos = {
+    campo: campo, columna: columna, nuevoNodo: nuevoNodo, tieneContenido: tieneContenido,
+    aJson: aJson, aXml: aXml, aXmlDocumento: aXmlDocumento, aValor: aValor,
+    leerDatos: leerDatos, tablaDesdeTsv: tablaDesdeTsv, tablaDesdeCeldas: tablaDesdeCeldas,
+    seccionesDeDatos: seccionesDeDatos, ErrorDatos: ErrorDatos, hoy: hoy, nombreArchivo: nombreArchivo, leerTexto: leerTexto,
+    menuTipos: menuTipos, abrirMenu: abrirMenu, pedir: pedir, el: el
+  };
 
   // Para las pruebas (herramientas/probar-crear.js).
   W.crear = {
     aJson: aJson, aXml: aXml, aXmlDocumento: aXmlDocumento, aValor: aValor,
-    desdeValor: desdeValor, leerDatos: leerDatos, tablaDesdeTsv: tablaDesdeTsv, leerTsv: leerTsv,
+    desdeValor: desdeValor, leerDatos: leerDatos, tablaDesdeTsv: tablaDesdeTsv, tablaDesdeCeldas: tablaDesdeCeldas, leerTsv: leerTsv,
     heredarEtiquetas: heredarEtiquetas, seccionesDeDatos: seccionesDeDatos, validarSecciones: validarSecciones,
     ErrorDatos: ErrorDatos, aClave: aClave, etiquetaDe: etiquetaDe, nombreXml: nombreXml,
     cargarDocumento: cargarDocumento, markdownDelEditor: markdownDelEditor, verVistaDoc: verVistaDoc,
     cargarDatos: cargarDatos, cargarDatosTexto: cargarDatosTexto, verVistaDatos: verVistaDatos, cambiarFormatoDatos: cambiarFormatoDatos,
-    textoDatos: textoDatos, abrirPlantilla: function (id) { PLANTILLAS[id](); },
-    estado: { doc: doc, datos: datos }
+    textoDatos: textoDatos, estado: { doc: doc, datos: datos }
   };
 })();

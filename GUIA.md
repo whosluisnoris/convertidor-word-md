@@ -1,18 +1,24 @@
 # Guía de word.md
 
-Markdown solo entiende estructura: títulos, listas, tablas, énfasis. Si tu Word usa los estilos correctos, el resultado queda perfecto a la primera. Y si prefieres empezar desde cero, en **Crear** puedes escribir documentos y armar archivos de datos.
+Convierte un Word, un Excel o un PowerPoint, escribe un documento o arma un archivo de datos. Cada cosa se abre en su pestaña, como en el navegador, y todo se guarda solo en tu computadora.
+
+Markdown solo entiende estructura: títulos, listas, tablas, énfasis. Si tu Word usa los estilos correctos, el resultado queda perfecto a la primera.
 
 > Esta guía también está dentro de la app, en la pestaña **Guía**.
 
-## 1. Usar el convertidor
+## 1. Convertir un archivo
 
 1. Abre `index.html` con doble clic. Se abre en tu navegador (Chrome o Edge).
-2. Arrastra uno o varios archivos `.docx` a la zona blanca, o pulsa **Elegir archivos**.
-3. Revisa el Markdown y la vista previa. Si aparecen consejos amarillos, léelos: te dicen qué corregir en el Word.
-4. Pulsa **Descargar**:
+2. En **Inicio**, arrastra uno o varios archivos a la zona blanca, o pulsa **Elegir archivos**. Sirven **Word** (`.docx`), **Excel** (`.xlsx`) y **PowerPoint** (`.pptx`).
+3. Cada archivo se abre en su **pestaña**, listo para corregir: cambia títulos, borra o agrega lo que quieras. Si aparecen consejos amarillos, léelos: te dicen qué revisar.
+4. Con un **Excel**, la app pregunta si lo quieres **como datos** (`.json`/`.xml`) o **como tabla en un documento** (`.md`). Cada hoja se vuelve una tabla; las fórmulas quedan con su resultado.
+5. Con un **PowerPoint**, cada diapositiva se vuelve una sección con su título, sus viñetas, tablas, imágenes y notas del orador. El diseño y las animaciones se pierden.
+6. Pulsa **Descargar**:
    - Si el documento no tiene imágenes, recibes un archivo `.md`.
    - Si tiene imágenes, recibes un `.zip` con el `.md` y una carpeta `imagenes/`. Descomprímelo y mantén ambos juntos.
-   - Si convertiste varios archivos, **Descargar todos (.zip)** los junta en un solo archivo.
+   - Si tienes varias pestañas abiertas, el botón **+** › **Descargar todas las pestañas** las junta en un `.zip`.
+
+Los formatos antiguos (`.doc`, `.xls`, `.ppt`) no se pueden leer: ábrelos en Office y usa *Guardar como* con el formato nuevo.
 
 No necesita internet: puedes copiar la carpeta completa a una memoria USB y usarla en cualquier computadora con Windows, Mac o Linux.
 
@@ -56,7 +62,7 @@ No necesita internet: puedes copiar la carpeta completa a una memoria USB y usar
 
 ## 5. Crear documentos y datos
 
-En la pestaña **Crear** eliges entre **Un documento** (`.md`) o **Datos** (`.json` o `.xml`). También hay plantillas y un botón para abrir un `.md`, `.json` o `.xml` que ya tengas.
+En el **Inicio** eliges entre **Un documento** (`.md`) o **Datos** (`.json` o `.xml`). También hay plantillas y un botón para abrir un `.md`, `.json` o `.xml` que ya tengas.
 
 ### Un documento (.md)
 
@@ -84,9 +90,25 @@ En la pestaña **Crear** eliges entre **Un documento** (`.md`) o **Datos** (`.js
 
 Lo que escribes se guarda solo en este navegador, en tu computadora. Si corriges el código a mano y tiene un error, la app te marca la línea antes de volver al formulario.
 
-## 6. Plantilla de ejemplo
+### Pestañas y Mis documentos
 
-`ejemplo/plantilla.docx` usa todos los elementos soportados. Úsala así:
+- **Inicio** siempre está a la izquierda: desde ahí conviertes, creas o abres algo.
+- El botón amarillo **+** abre algo nuevo en otra pestaña.
+- La **×** cierra la pestaña, pero el documento **no se borra**: sigue en **Mis documentos**, en el Inicio. Borrar solo se hace desde ahí.
+- Al volver a abrir la app aparecen las mismas pestañas que tenías.
+
+### Analizar un documento
+
+El botón **Analizar** (en el panel derecho) revisa el documento de la pestaña:
+
+- **Revisión rápida** funciona sin internet: avisa si faltan títulos, si se salta un nivel, si hay imágenes sin descripción o datos vacíos.
+- **Claude (Anthropic)** escribe un resumen y sugerencias con inteligencia artificial. Es opcional: **usa internet** y necesita tu clave de API de Anthropic (el uso se cobra en tu cuenta). Antes de enviar, la app te dice qué documento sale de tu computadora. No lo uses con información confidencial. La clave no se guarda, salvo que marques *Recordar la clave en este navegador*.
+
+## 6. Archivos de ejemplo
+
+En la carpeta `ejemplo/` hay un archivo de cada tipo para probar: `plantilla.docx`, `ventas.xlsx` (dos hojas, con fechas, sí/no, una fórmula y una celda combinada) y `presentacion.pptx` (portada, viñetas, tabla, imagen y notas).
+
+`ejemplo/plantilla.docx` usa todos los elementos soportados del Word. Úsala así:
 
 - **Para aprender:** conviértela y compara el Word con el Markdown.
 - **Como base:** ábrela en Word, borra el contenido y escribe el tuyo. Los estilos *Cita* y *Código* ya están creados.

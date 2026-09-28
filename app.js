@@ -1,5 +1,6 @@
-/* word.md — convierte .docx a Markdown dentro del navegador, sin internet.
-   Flujo: .docx → (mammoth) HTML → limpieza → (turndown + gfm) Markdown → vista previa (marked). */
+/* word.md — núcleo compartido: conversión de Word (.docx → Markdown) y utilidades.
+   Flujo: .docx → (mammoth) HTML → limpieza → (turndown + gfm) Markdown.
+   La interfaz (pestañas, inicio, editores) está en pestanas.js y crear.js; lo común se comparte en window.wordmd. */
 (function () {
   'use strict';
 
@@ -112,47 +113,7 @@
   }
   var turndown = nuevoTurndown();
 
-  // ---------- Estado ----------
-  var estado = { archivos: [], actual: 0 };
-
-  // ---------- Elementos ----------
   var $ = function (id) { return document.getElementById(id); };
-  var vistas = {
-    inicio: $('vista-inicio'), cargando: $('vista-cargando'),
-    resultado: $('vista-resultado'), guia: $('vista-guia'),
-    crear: $('vista-crear'), documento: $('vista-documento'), datos: $('vista-datos')
-  };
-  // Cada vista pertenece a una sección del menú; al volver a una sección se abre su última vista.
-  var SECCION = {
-    inicio: 'convertir', cargando: 'convertir', resultado: 'convertir',
-    crear: 'crear', documento: 'crear', datos: 'crear', guia: 'guia'
-  };
-  var ultimaVista = { convertir: 'inicio', crear: 'crear', guia: 'guia' };
-  var seccionActual = 'convertir';
-
-  function mostrar(nombre) {
-    Object.keys(vistas).forEach(function (k) { vistas[k].hidden = k !== nombre; });
-    seccionActual = SECCION[nombre];
-    ultimaVista[seccionActual] = nombre;
-    document.querySelectorAll('.nav a').forEach(function (a) {
-      if (a.dataset.ir === seccionActual) a.setAttribute('aria-current', 'page');
-      else a.removeAttribute('aria-current');
-    });
-    window.scrollTo(0, 0);
-    document.dispatchEvent(new CustomEvent('wordmd:vista', { detail: nombre }));
-  }
-
-  function irA(destino) {
-    mostrar(ultimaVista[destino] || 'inicio');
-  }
-
-  document.querySelectorAll('[data-ir]').forEach(function (a) {
-    a.addEventListener('click', function (e) {
-      e.preventDefault();
-      try { history.replaceState(null, '', '#' + a.dataset.ir); } catch (err) { /* algunos navegadores lo bloquean en file:// */ }
-      irA(a.dataset.ir);
-    });
-  });
 
   var avisoTimer;
   function aviso(texto) {
@@ -163,101 +124,7 @@
     avisoTimer = setTimeout(function () { t.hidden = true; }, 2600);
   }
 
-  function errorInicio(texto) {
-    var e = $('error-inicio');
-    e.textContent = texto;
-    e.hidden = !texto;
-  }
-
-  // ---------- Entrada de archivos ----------
-  function prepararZona(zona, input) {
-    ['dragenter', 'dragover'].forEach(function (ev) {
-      zona.addEventListener(ev, function (e) { e.preventDefault(); zona.classList.add('activo'); });
-    });
-    ['dragleave', 'dragend'].forEach(function (ev) {
-      zona.addEventListener(ev, function (e) {
-        if (!zona.contains(e.relatedTarget)) zona.classList.remove('activo');
-      });
-    });
-    zona.addEventListener('drop', function (e) {
-      e.preventDefault();
-      zona.classList.remove('activo');
-      recibir(e.dataTransfer.files);
-    });
-    input.addEventListener('change', function () {
-      recibir(input.files);
-      input.value = '';
-    });
-  }
-  prepararZona($('soltar'), $('entrada'));
-  prepararZona(document.querySelector('.otro'), $('entrada-otro'));
-  // Evita que el navegador abra el archivo si se suelta fuera de la zona.
-  window.addEventListener('dragover', function (e) { e.preventDefault(); });
-  window.addEventListener('drop', function (e) {
-    var hayArchivos = e.dataTransfer && e.dataTransfer.files.length;
-    // Arrastrar texto dentro de un editor debe seguir funcionando.
-    if (!hayArchivos && e.target.closest && e.target.closest('[contenteditable="true"], textarea, input')) return;
-    e.preventDefault();
-    if (!hayArchivos) return;
-    if (seccionActual === 'convertir') recibir(e.dataTransfer.files);
-    else if (seccionActual === 'crear' && window.wordmd.alSoltar) window.wordmd.alSoltar(e.dataTransfer.files);
-  });
-
-  function recibir(lista) {
-    var todos = Array.prototype.slice.call(lista || []);
-    if (!todos.length) return;
-    var docx = todos.filter(function (f) { return /\.docx$/i.test(f.name); });
-    var rechazados = todos.filter(function (f) { return !/\.docx$/i.test(f.name); });
-
-    if (!docx.length) {
-      var doc = rechazados.some(function (f) { return /\.doc$/i.test(f.name); });
-      mostrar('inicio');
-      errorInicio(doc
-        ? 'Los archivos .doc antiguos no se pueden leer. Ábrelo en Word y usa Archivo › Guardar como › Documento de Word (.docx).'
-        : 'Solo se pueden convertir archivos .docx de Word. Revisa que el archivo termine en .docx.');
-      return;
-    }
-    errorInicio('');
-    convertirTodos(docx, rechazados);
-  }
-
-  // ---------- Conversión ----------
-  function convertirTodos(archivos, rechazados) {
-    mostrar('cargando');
-    var resultados = [];
-    var cadena = Promise.resolve();
-    archivos.forEach(function (archivo, i) {
-      cadena = cadena.then(function () {
-        $('texto-cargando').textContent = archivos.length > 1
-          ? 'Convirtiendo ' + (i + 1) + ' de ' + archivos.length + '…'
-          : 'Convirtiendo ' + archivo.name + '…';
-        return convertir(archivo).then(function (r) { resultados.push(r); }, function (err) {
-          console.error(err);
-          resultados.push({ nombre: archivo.name, error: true });
-        });
-      });
-    });
-    cadena.then(function () {
-      var buenos = resultados.filter(function (r) { return !r.error; });
-      var malos = resultados.filter(function (r) { return r.error; });
-      if (!buenos.length) {
-        mostrar('inicio');
-        errorInicio('No se pudo leer ' + (malos.length > 1 ? 'ningún archivo' : '“' + malos[0].nombre + '”') +
-          '. Puede estar dañado o protegido con contraseña. Ábrelo en Word, guárdalo de nuevo como .docx e inténtalo otra vez.');
-        return;
-      }
-      if (malos.length || rechazados.length) {
-        var nombres = malos.map(function (m) { return m.nombre; })
-          .concat(rechazados.map(function (f) { return f.name; }));
-        buenos[0].consejos.unshift('No se pudo convertir: ' + nombres.join(', ') + '. Solo se aceptan .docx sin contraseña.');
-      }
-      estado.archivos = buenos;
-      estado.actual = 0;
-      pintarResultado();
-      mostrar('resultado');
-    });
-  }
-
+  // ---------- Conversión de Word ----------
   function leerArchivo(archivo) {
     if (archivo.arrayBuffer) return archivo.arrayBuffer();
     return new Promise(function (ok, mal) {
@@ -440,72 +307,7 @@
     return { titulos: titulos, tablas: tablas, imagenes: numImagenes, palabras: palabras };
   }
 
-  // ---------- Pintar resultado ----------
   function plural(n, uno, varios) { return n + ' ' + (n === 1 ? uno : varios); }
-
-  function pintarResultado() {
-    var lista = estado.archivos;
-    var a = lista[estado.actual];
-
-    $('res-nombre').textContent = a.nombre + '.md';
-    var e = a.estadisticas;
-    var chips = [
-      plural(e.titulos, 'título', 'títulos'),
-      plural(e.tablas, 'tabla', 'tablas'),
-      plural(e.imagenes, 'imagen', 'imágenes'),
-      plural(e.palabras, 'palabra', 'palabras')
-    ];
-    $('res-chips').innerHTML = '';
-    chips.forEach(function (c) {
-      var s = document.createElement('span');
-      s.textContent = c;
-      $('res-chips').appendChild(s);
-    });
-
-    // Lista de archivos (solo si hay varios)
-    var hayVarios = lista.length > 1;
-    $('res-archivos').hidden = !hayVarios;
-    $('btn-todos').hidden = !hayVarios;
-    if (hayVarios) {
-      $('res-archivos-titulo').textContent = lista.length + ' archivos convertidos';
-      var cont = $('res-archivos-lista');
-      cont.innerHTML = '';
-      lista.forEach(function (arch, i) {
-        var b = document.createElement('button');
-        b.setAttribute('role', 'tab');
-        b.setAttribute('aria-selected', i === estado.actual ? 'true' : 'false');
-        b.innerHTML = '<span class="punto' + (arch.consejos.length ? ' aviso' : '') + '"></span><span class="texto"></span>';
-        b.querySelector('.texto').textContent = arch.nombre;
-        b.title = arch.consejos.length ? 'Tiene consejos' : 'Listo';
-        b.addEventListener('click', function () { estado.actual = i; pintarResultado(); });
-        cont.appendChild(b);
-      });
-    }
-
-    $('btn-descargar').textContent = a.imagenes.length ? 'Descargar .zip' : 'Descargar .md';
-
-    // Consejos
-    var caja = $('res-consejos');
-    caja.hidden = !a.consejos.length;
-    caja.innerHTML = '';
-    if (a.consejos.length) {
-      var titulo = document.createElement('b');
-      titulo.textContent = a.consejos.length === 1 ? 'Consejo' : 'Consejos';
-      var ul = document.createElement('ul');
-      a.consejos.forEach(function (c) {
-        var li = document.createElement('li');
-        li.textContent = c;
-        ul.appendChild(li);
-      });
-      caja.appendChild(titulo);
-      caja.appendChild(ul);
-    }
-
-    $('res-md').innerHTML = resaltar(a.md);
-    $('res-previa').innerHTML = vistaPrevia(a);
-    $('res-md').scrollTop = 0;
-    $('res-previa').scrollTop = 0;
-  }
 
   function escapar(t) {
     return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -547,23 +349,6 @@
     });
   }
 
-  // Vista previa: las rutas "imagenes/…" se sustituyen por la imagen real en memoria.
-  function vistaPrevia(a) {
-    var html = marked.parse(a.md, { gfm: true, breaks: false });
-    var dom = new DOMParser().parseFromString('<div id="r">' + html + '</div>', 'text/html');
-    var r = dom.getElementById('r');
-    limpiarHtml(r);
-    var porRuta = {};
-    a.imagenes.forEach(function (img) { porRuta[img.ruta] = img; });
-    r.querySelectorAll('img').forEach(function (img) {
-      var dato = porRuta[img.getAttribute('src')];
-      if (dato) img.setAttribute('src', 'data:' + dato.tipo + ';base64,' + dato.base64);
-    });
-    r.querySelectorAll('a[href]').forEach(function (l) {
-      if (!/^#/.test(l.getAttribute('href'))) { l.target = '_blank'; l.rel = 'noopener'; }
-    });
-    return r.innerHTML;
-  }
 
   // ---------- Descargas ----------
   function descargarBlob(blob, nombre) {
@@ -577,48 +362,6 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
   }
 
-  function blobMd(texto) { return new Blob([texto], { type: 'text/markdown;charset=utf-8' }); }
-
-  function agregarAZip(zip, a, carpeta) {
-    var destino = carpeta ? zip.folder(carpeta) : zip;
-    destino.file(a.nombre + '.md', a.md);
-    a.imagenes.forEach(function (img) { destino.file(img.ruta, img.base64, { base64: true }); });
-  }
-
-  $('btn-descargar').addEventListener('click', function () {
-    var a = estado.archivos[estado.actual];
-    if (!a.imagenes.length) {
-      descargarBlob(blobMd(a.md), a.nombre + '.md');
-      aviso('Descargado ' + a.nombre + '.md');
-      return;
-    }
-    var zip = new JSZip();
-    agregarAZip(zip, a, '');
-    zip.generateAsync({ type: 'blob' }).then(function (blob) {
-      descargarBlob(blob, a.nombre + '.zip');
-      aviso('Descargado ' + a.nombre + '.zip');
-    });
-  });
-
-  $('btn-todos').addEventListener('click', function () {
-    var zip = new JSZip();
-    var usados = {};
-    estado.archivos.forEach(function (a) {
-      var carpeta = a.nombre, n = 2;
-      while (usados[carpeta]) carpeta = a.nombre + ' (' + (n++) + ')';
-      usados[carpeta] = true;
-      // Sin imágenes, el .md va suelto; con imágenes, en su carpeta para que las rutas funcionen.
-      agregarAZip(zip, a, a.imagenes.length || carpeta !== a.nombre ? carpeta : '');
-    });
-    zip.generateAsync({ type: 'blob' }).then(function (blob) {
-      descargarBlob(blob, 'markdown.zip');
-      aviso('Descargados ' + estado.archivos.length + ' archivos');
-    });
-  });
-
-  $('btn-copiar').addEventListener('click', function () {
-    copiarTexto(estado.archivos[estado.actual].md, 'Markdown copiado');
-  });
 
   function copiarTexto(texto, mensaje) {
     var copiado = function () { aviso(mensaje); };
@@ -641,24 +384,19 @@
     t.remove();
   }
 
-  // ---------- Pestañas en móvil ----------
-  var botonesPestana = document.querySelectorAll('.pestanas-movil button');
-  function elegirPestana(panel) {
-    botonesPestana.forEach(function (b) { b.setAttribute('aria-selected', b.dataset.panel === panel ? 'true' : 'false'); });
-    document.querySelectorAll('.panel-der .columna').forEach(function (c) {
-      if (c.dataset.col === panel) c.removeAttribute('data-oculta');
-      else c.setAttribute('data-oculta', '');
-    });
+  // Un .zip con varios documentos: los que tienen imágenes van en su carpeta para que las rutas funcionen.
+  function agregarAZip(zip, nombre, md, imagenes, carpeta) {
+    var destino = carpeta ? zip.folder(carpeta) : zip;
+    destino.file(nombre + '.md', md);
+    (imagenes || []).forEach(function (img) { destino.file(img.ruta, img.base64, { base64: true }); });
   }
-  botonesPestana.forEach(function (b) { b.addEventListener('click', function () { elegirPestana(b.dataset.panel); }); });
-  elegirPestana('md');
 
-  // ---------- Lo que comparte con crear.js ----------
+  // ---------- Lo que comparten los demás archivos ----------
   window.wordmd = {
-    mostrar: mostrar,
+    convertirWord: convertir,
     aviso: aviso,
-    recibir: recibir,
     descargarBlob: descargarBlob,
+    agregarAZip: agregarAZip,
     copiarTexto: copiarTexto,
     nuevoTurndown: nuevoTurndown,
     prepararCodigo: prepararCodigo,
@@ -667,13 +405,7 @@
     resaltar: resaltar,
     escapar: escapar,
     contar: contar,
-    plural: plural,
-    alSoltar: null // lo define crear.js
+    plural: plural
+    // pestanas.js añade: mostrar, abrirArchivos, cambio… · crear.js añade: editorDoc, editorDatos, datos
   };
-
-  // Abrir directamente la guía o la sección Crear si la dirección lo pide.
-  document.addEventListener('DOMContentLoaded', function () {
-    if (location.hash === '#guia') irA('guia');
-    else if (location.hash === '#crear') irA('crear');
-  });
 })();
