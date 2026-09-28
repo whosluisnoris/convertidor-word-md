@@ -1,20 +1,25 @@
-# AGENTS.md — word.md (convertidor de Word a Markdown y creador de documentos y datos)
+# AGENTS.md — word.md (convierte Word, Excel y PowerPoint; crea documentos y datos)
 
 Guía para agentes de IA y personas que trabajen en este código. Léela completa antes de cambiar nada.
 
 ## Qué es
 
-Una página web **estática** que convierte archivos `.docx` a Markdown **dentro del navegador**. Se abre con doble clic en `index.html` (protocolo `file://`). No hay servidor, build, framework ni instalación.
+Una página web **estática** para personas no técnicas. Se abre con doble clic en `index.html` (protocolo `file://`). No hay servidor, build, framework ni instalación. Todo ocurre **dentro del navegador**:
 
-Además tiene la sección **Crear**, para que personas no técnicas escriban documentos `.md` (con secciones de datos JSON/XML dentro) y armen archivos `.json`/`.xml` con un formulario.
+- **Convertir** Word (`.docx`), Excel (`.xlsx`) y PowerPoint (`.pptx`) a Markdown (o, un Excel, a datos `.json`/`.xml`).
+- **Editar** el resultado, o **crear** desde cero un documento `.md` (que puede llevar secciones de datos JSON/XML) o un archivo de datos con un formulario.
+- Trabajar con **pestañas**, como en el navegador. Los documentos se guardan en `localStorage` y siguen en **Mis documentos** aunque se cierre su pestaña.
+- **Analizar** un documento: revisión local sin internet y, de forma opcional, con un modelo de IA (Claude).
 
 ## Restricciones que no se negocian
 
 1. **Sin internet.** Prohibido cargar nada remoto: ni CDN, ni Google Fonts, ni `fetch` a APIs. Todas las librerías viven en `vendor/`.
+   - **Única excepción: los proveedores de análisis en línea** (`analisis.js`, p. ej. Claude). Solo se llaman cuando la persona elige ese proveedor, escribe su clave y pulsa *Analizar* con el aviso de privacidad a la vista. Nunca de forma automática, nunca al abrir la app. Cualquier proveedor nuevo con `usaInternet: true` debe seguir las mismas reglas.
 2. **Sin instalar programas.** La app no puede requerir Node, Python ni nada más para funcionar. `herramientas/` es solo para desarrollo.
 3. **Debe funcionar desde `file://`.** Consecuencias:
    - No uses `fetch()` ni `import` de archivos locales (Chrome los bloquea en `file://`). Por eso la guía está escrita dentro de `index.html` y no se carga desde `GUIA.md`.
-   - No uses `<script type="module">`: los módulos ES también fallan en `file://`. Usa scripts clásicos y una IIFE por archivo (`app.js`, `crear.js`); lo que comparten va en `window.wordmd`.
+   - No uses `<script type="module">`: los módulos ES también fallan en `file://`. Usa scripts clásicos y una IIFE por archivo; lo que comparten va en `window.wordmd`. Por eso tampoco se puede usar el SDK de Anthropic: la llamada a la API es un `fetch` directo.
+   - `localStorage` funciona en `file://` en Chrome y Edge. Todo acceso va en `try/catch` (puede estar lleno o bloqueado).
 4. **Fuentes del sistema (Windows 11):** `Segoe UI Variable Display/Text` y `Cascadia Code`. No añadas webfonts; si hicieran falta, tendrían que ir en `vendor/` como `.woff2`.
 5. **Todo en español**, tanto los textos de la interfaz como los nombres del código (`convertir`, `limpiarTablas`, `pintarResultado`…). Mantén ese estilo.
 
@@ -22,31 +27,45 @@ Además tiene la sección **Crear**, para que personas no técnicas escriban doc
 
 | Ruta | Qué contiene |
 |---|---|
-| `index.html` | Todo el marcado: barra, 7 vistas (`vista-inicio`, `vista-cargando`, `vista-resultado`, `vista-crear`, `vista-documento`, `vista-datos`, `vista-guia`), el aviso flotante y el `<dialog>` que usa Crear. La guía completa está escrita aquí. |
-| `styles.css` | Diseño "Pop": variables en `:root` y secciones marcadas (`barra`, `inicio`, `cargando`, `resultado`, `crear`, `guía`, `pantallas pequeñas`). |
-| `app.js` | El convertidor y la navegación, dentro de una IIFE. Al final expone `window.wordmd` para `crear.js`. |
-| `crear.js` | La sección Crear (editor de documentos y editor de datos), en otra IIFE. Se carga después de `app.js`. |
+| `index.html` | Todo el marcado: la barra (logo, pestañas, botón Guía), 5 vistas (`vista-inicio`, `vista-cargando`, `vista-documento`, `vista-datos`, `vista-guia`), el aviso flotante y tres `<dialog>` (texto/enlace, opciones, analizar). La guía completa está escrita aquí. |
+| `styles.css` | Diseño "Pop": variables en `:root` y secciones marcadas (`barra`, `inicio`, `cargando`, `tarjeta azul`, `guía`, `crear`, `diálogos`, `pantallas pequeñas`). |
+| `app.js` | Núcleo: conversión de Word (mammoth → Turndown) y utilidades compartidas. Crea `window.wordmd`. |
+| `importar.js` | Lectores propios de Excel y PowerPoint (sobre JSZip y DOMParser). |
+| `crear.js` | Modelo de datos (nodos, JSON/XML), formulario, editor de documentos y editor de datos. |
+| `analisis.js` | Diálogo *Analizar* y registro de proveedores (local y Claude). |
+| `pestanas.js` | Almacén de documentos, pestañas, Inicio, Mis documentos, plantillas y entrada de archivos. **Se carga el último y arranca la app.** |
 | `vendor/` | Librerías de terceros, versiones fijas. Ver `vendor/LICENSES.md`. |
-| `ejemplo/plantilla.docx` | Word de ejemplo con todos los elementos soportados. Se genera con `herramientas/generar-plantilla.js`. |
+| `ejemplo/` | `plantilla.docx` (todos los elementos de Word; `herramientas/generar-plantilla.js`), `ventas.xlsx` y `presentacion.pptx` (`herramientas/generar-office.js`). |
 | `GUIA.md` | La misma guía de `index.html`, en Markdown, para leerla en GitHub. **Si cambias una, cambia la otra.** |
 | `docs/capturas/` | Capturas usadas en el README. Si cambias el diseño, vuelve a generarlas (ver "Cómo probar"). |
-| `herramientas/` | Solo para desarrollo (Node): generar los `.docx` de prueba y probar de extremo a extremo con jsdom (`probar.js` para el convertidor, `probar-crear.js` para Crear). |
+| `herramientas/` | Solo para desarrollo (Node): generar los archivos de ejemplo y probar con jsdom (`probar.js` convierte archivos, `probar-crear.js` prueba todo lo demás). |
 
-## Flujo de conversión (`app.js`)
+Orden de carga (importa): `vendor/*` → `app.js` → `importar.js` → `crear.js` → `analisis.js` → `pestanas.js`.
+
+## Flujo de un archivo
 
 ```
-archivo .docx
-  └─ recibir()            filtra .docx y rechaza .doc u otros formatos con un mensaje claro
-     └─ convertirTodos()  procesa uno por uno y cambia a la vista "cargando"
-        └─ convertir()
-           1. mammoth.convertToHtml(buffer, {styleMap: MAPA_ESTILOS, convertImage})
-              · cada imagen → imagenes/imagen-N.ext; los bytes se guardan en base64
-           2. traducirMensajes()  avisos de mammoth → consejos en español
-           3. DOMParser → limpiarTablas() + prepararCodigo()
-           4. turndown.turndown()  HTML → Markdown (con reglas propias)
-           5. limpiarMarkdown()    espacios, saltos de más, "# 1\." → "# 1."
-           6. contar()             chips: títulos, tablas, imágenes, palabras
-        └─ pintarResultado()      tarjeta, lista de archivos, consejos, Markdown resaltado y vista previa
+archivo(s) soltados o elegidos
+  └─ pestanas.js · recibirArchivos()   clasifica por extensión; rechaza .doc/.xls/.ppt con un mensaje claro
+     └─ importar()                     uno por uno, con la vista "cargando"
+        ├─ .docx → W.convertirWord()        (app.js)       → documento .md + imágenes + consejos
+        ├─ .pptx → W.importar.leerPowerPoint (importar.js) → documento .md + imágenes + consejos
+        ├─ .xlsx → W.importar.leerExcel      (importar.js) → pregunta: ¿datos o documento?
+        ├─ .md/.txt                                         → documento .md
+        └─ .json/.xml → W.datos.leerDatos    (crear.js)     → datos (si tiene errores, se abre en la vista de código)
+     └─ crearDocumento() por cada uno → se abren como pestañas → activar(el primero)
+```
+
+## Conversión de Word (`app.js`)
+
+```
+.docx
+  1. mammoth.convertToHtml(buffer, {styleMap: MAPA_ESTILOS, convertImage})
+     · cada imagen → imagenes/imagen-N.ext; los bytes se guardan en base64
+  2. traducirMensajes()  avisos de mammoth → consejos en español
+  3. DOMParser → limpiarTablas() + prepararCodigo()
+  4. turndown.turndown()  HTML → Markdown (con reglas propias)
+  5. limpiarMarkdown()    espacios, saltos de más, "# 1\." → "# 1."
 ```
 
 ### Secciones importantes de `app.js`
@@ -61,22 +80,51 @@ archivo .docx
 - **`prepararCodigo()`**: mammoth produce `<pre>texto</pre>`, pero Turndown solo genera un bloque con cercas (```` ``` ````) si encuentra `<pre><code>`.
 - **`traducirMensajes()`**: convierte los avisos de mammoth en consejos legibles y quita los que no aportan nada. Para añadir un consejo nuevo, agrégalo aquí o en `convertir()` (ahí están los consejos de celdas combinadas, imágenes EMF/TIFF y documento sin títulos).
 - **`resaltar()` / `enLinea()`**: resaltado de sintaxis ligero, línea por línea. Las clases `.h .b .l .t .i .c .q .k` están en `styles.css` (sección `.codigo`).
-- **`vistaPrevia()`**: `marked` + limpieza básica (quita `script`, `iframe` y atributos `on*`), y cambia `imagenes/…` por un `data:` URI para que la vista previa muestre las imágenes.
-- **Descargas**:
-  - Sin imágenes se descarga un `.md`. Con imágenes, un `.zip` con `nombre.md` + `imagenes/`.
-  - "Descargar todos" pone cada documento que tiene imágenes en su propia carpeta, para que las rutas relativas sigan funcionando.
-- **Estado**: `estado.archivos` (resultados) y `estado.actual` (el que se muestra).
-- **Navegación**: `mostrar(vista)` cambia de vista. Cada vista pertenece a una sección del menú (`SECCION`: `convertir`, `crear`, `guia`) y `ultimaVista` recuerda a qué vista volver en cada sección. Al cambiar de vista se lanza el evento `wordmd:vista`.
-- **`nuevoTurndown()`**: crea un Turndown con todas las reglas de arriba. El convertidor usa una instancia y `crear.js` otra, con reglas extra.
-- **`window.wordmd`**: lo que `crear.js` usa de aquí (`mostrar`, `aviso`, `recibir`, `descargarBlob`, `copiarTexto`, `nuevoTurndown`, `prepararCodigo`, `limpiarMarkdown`, `limpiarHtml`, `resaltar`, `escapar`, `contar`, `plural`) y `alSoltar`, que define `crear.js` para los archivos que se sueltan en la sección Crear.
+- **`limpiarHtml()`**: quita `script`, `iframe`, atributos `on*` y enlaces `javascript:`. Se usa con todo HTML que viene de Markdown o de lo pegado.
+- **`agregarAZip()`**: un documento en un `.zip`; con imágenes va en su carpeta para que las rutas relativas funcionen.
+- **`nuevoTurndown()`**: crea un Turndown con todas las reglas de arriba. El convertidor, PowerPoint y el editor de documentos usan cada uno su instancia.
+- **`window.wordmd`** (se va completando al cargar cada archivo):
+  - `app.js`: `convertirWord`, `aviso`, `descargarBlob`, `agregarAZip`, `copiarTexto`, `nuevoTurndown`, `prepararCodigo`, `limpiarMarkdown`, `limpiarHtml`, `resaltar`, `escapar`, `contar`, `plural`.
+  - `importar.js`: `importar` (`leerExcel`, `excelAMarkdown`, `leerPowerPoint`).
+  - `crear.js`: `editorDoc`, `editorDatos` (`cargar(registro)`, `estado()`), `datos` (modelo y utilidades de interfaz), `indicarGuardado`, `crear` (para pruebas).
+  - `analisis.js`: `analisis` (`registrar`, `proveedores`, `abrir`, `analizarLocal`).
+  - `pestanas.js`: `mostrar`, `cambio`, `abrirArchivos`, `pestanas` (`activar`, `abrir`, `cerrar`, `crear`, `recibir`, `guardar`, `documentoActivo`…).
 
-## Sección Crear (`crear.js`)
+## Excel y PowerPoint (`importar.js`)
+
+Los dos son un `.zip` con XML; se abren con JSZip y se leen con `DOMParser`, buscando por nombre local (`getElementsByTagNameNS('*', 't')`) para no depender de prefijos.
+
+- **Excel** → `{hojas: [{nombre, filas: [[valor]]}], consejos}`.
+  - Textos compartidos (`sharedStrings.xml`), booleanos, errores y texto en línea.
+  - **Fechas**: Excel las guarda como número; se reconocen por el formato de la celda (`styles.xml`: `numFmtId` integrados 14–22, 45–47… o códigos propios con `d`/`y`/`h`). Soporta el sistema 1904.
+  - Fórmulas: se usa el valor calculado que guarda el archivo. Se recortan filas y columnas vacías de los bordes.
+  - Como datos, cada hoja es un campo tabla (`W.datos.tablaDesdeCeldas`); como documento, una tabla GFM por hoja (`excelAMarkdown`).
+- **PowerPoint** → `{md, imagenes, consejos}` (misma forma que Word).
+  - Orden de diapositivas: `presentation.xml` → `sldIdLst`. Dentro de cada una, primero el título y luego de arriba abajo y de izquierda a derecha (si todas las formas tienen posición).
+  - **Título**: el marcador `title`/`ctrTitle`. Si no hay, el primer cuadro de texto con una sola línea corta en ≥ 24 pt o en negrita. El título de la portada es el `# título` del documento.
+  - Viñetas: los marcadores de cuerpo tienen viñeta salvo `buNone`; los cuadros de texto solo con `buChar`/`buAutoNum`. `lvl` da el subnivel. Se arma HTML y se pasa por Turndown.
+  - Tablas (`a:tbl`), imágenes (`p:pic` → `imagenes/imagen-N.ext`) y notas del orador (como cita). Gráficos y SmartArt dan un consejo.
+- Formatos viejos (`.xls`, `.ppt`, `.doc`) son binarios: no se leen; se pide guardarlos en el formato nuevo.
+
+## Pestañas y documentos (`pestanas.js`)
+
+- **Almacén** en `localStorage`:
+  - `wordmd.documentos`: índice `[{id, tipo: 'md'|'datos', nombre, formato, actualizado}]`.
+  - `wordmd.doc.<id>`: contenido. Documento: `{md, imagenes, etiquetas, consejos}`. Datos: `{nodo, formato, raiz, codigo}`.
+  - `wordmd.pestanas`: `{abiertas: [id], activa: id|'inicio'|'guia', guia: bool, anterior}`.
+  - `memoria[id]` guarda lo mismo mientras la app está abierta, por si `localStorage` se llena (entonces se intenta sin imágenes: estado `parcial`).
+- **Editores únicos**: hay un solo editor de documentos y uno de datos. Al cambiar de pestaña se guarda lo pendiente (`guardarPendiente`) y se carga el otro documento en el editor (`W.editorDoc.cargar` / `W.editorDatos.cargar`). Pulsar la pestaña que ya se ve no recarga (se perdería el cursor).
+- **Guardado**: `crear.js` llama a `W.cambio()` en cada cambio; se guarda 500 ms después (`guardarActiva`) y también al ocultar o cerrar la página.
+- **Cerrar ≠ borrar**: la × solo quita la pestaña. Borrar se hace desde *Mis documentos* (con confirmación).
+- **Guía**: es una pestaña más (`'guia'`), que al cerrarse vuelve a la anterior.
+- Migra lo guardado por la versión anterior (`wordmd.crear.documento` / `wordmd.crear.datos`) como documentos nuevos.
+
+## Editores (`crear.js`)
 
 ```
-Crear (vista-crear)
-  ├─ Un documento → vista-documento   escribir con formato ⇄ Markdown; se guarda como .md
-  │     └─ + Insertar › Datos en JSON/XML → sección de datos (formulario) = bloque ```json / ```xml
-  └─ Datos → vista-datos               formulario ⇄ código; se guarda como .json o .xml
+vista-documento   escribir con formato ⇄ Markdown; se guarda como .md
+  └─ + Insertar › Datos en JSON/XML → sección de datos (formulario) = bloque ```json / ```xml
+vista-datos       formulario ⇄ código; se guarda como .json o .xml
 ```
 
 ### Modelo de datos (sección 1 del archivo)
@@ -116,9 +164,41 @@ Para enfocar algo después de repintar, marca el objeto del modelo con `_enfocar
 - Lo pegado se pasa por Markdown (`turndown` → `marked`), así queda limpio y con la misma estructura.
 - Atajos: `# `, `## `, `### `, `- `, `1. `, `> ` al inicio de un párrafo; Ctrl+Mayús+0…3 para el tipo de texto (Ctrl+Alt choca con AltGr en teclados en español y Ctrl+número cambia de pestaña); Ctrl+K enlace; Ctrl+M cambia de vista.
 
-### Guardado
+### Lo que se guarda de cada editor
 
-Documento y datos se guardan solos en `localStorage` (`wordmd.crear.documento`, `wordmd.crear.datos`) medio segundo después de cada cambio. Si no caben las imágenes, se guarda sin ellas y el indicador lo dice. Todo acceso a `localStorage` va en `try/catch`.
+- `W.editorDoc.estado()` → `{nombre, md, imagenes (solo las usadas), etiquetas, consejos}`. `etiquetas` son los modelos de las secciones de datos en orden: el `.md` solo tiene claves (`fecha_de_apertura`) y así se recuperan las etiquetas con acentos al volver a abrir.
+- `W.editorDatos.estado()` → `{nombre, formato, raiz, nodo, codigo}`. `codigo` solo existe si se estaba corrigiendo el código y todavía no se aplicó (puede tener errores).
+- `consejos` son los de la conversión (Word, Excel, PowerPoint). Se muestran en el panel hasta que la persona los cierra.
+
+## Analizar (`analisis.js`)
+
+Arquitectura de **proveedores**. Cada uno es un objeto:
+
+```js
+W.analisis.registrar({
+  id: 'mi-proveedor',
+  nombre: 'Mi proveedor',
+  descripcion: 'Qué hace, en una frase para personas no técnicas.',
+  usaInternet: true,                      // true → aviso de privacidad y botón desactivado hasta tener lo necesario
+  campos: [                               // ajustes que se piden en el diálogo
+    { id: 'clave', etiqueta: 'Clave de API', tipo: 'password', ayuda: '…' },
+    { id: 'modelo', etiqueta: 'Modelo', tipo: 'select', porDefecto: 'x', opciones: [['x', 'X']] }
+  ],
+  listo: function (config) { return !!config.clave; },
+  analizar: function (documento, config, pregunta) {
+    // documento = {tipo: 'md'|'datos', nombre: 'menu.md', formato: 'md'|'json'|'xml', texto}
+    return Promise.resolve({ resumen: '…', puntos: [{ tipo: 'aviso'|'idea'|'bien', texto: '…' }], modelo: '…' });
+  }
+});
+```
+
+- Errores: rechaza la promesa con un `Error` cuyo mensaje sea **en español y para la persona** (el diálogo lo muestra tal cual).
+- **local**: revisión de estructura sin internet (títulos, niveles, párrafos largos, imágenes sin texto alternativo, enlaces "aquí", datos vacíos o con errores).
+- **claude**: `POST https://api.anthropic.com/v1/messages` con `fetch` (sin SDK: la app no tiene módulos ni empaquetador).
+  - Encabezados: `x-api-key`, `anthropic-version: 2023-06-01`, `anthropic-dangerous-direct-browser-access: true` (necesario para llamar desde una página) y `anthropic-beta: server-side-fallback-2026-07-01`.
+  - Cuerpo: `model` (por defecto `claude-opus-5-5`), `max_tokens: 16000`, `fallbacks: 'default'` (si el modelo rechaza la solicitud, Anthropic la reintenta con el modelo recomendado), `output_config: {effort: 'medium', format: {type: 'json_schema', schema}}` para recibir exactamente `{resumen, puntos}`, y el documento dentro de `<documento>` en el mensaje. El `system` pide tratarlo como material, no como instrucciones.
+  - Se revisa `stop_reason` (`refusal`, `max_tokens`) antes de leer el contenido; los errores HTTP (401, 402, 403, 404, 413, 429, 5xx) y la falta de conexión tienen mensajes propios. No se recorta el documento: si pasa de ~1.5 M caracteres se avisa.
+- **Clave**: se guarda en memoria; en `localStorage` (`wordmd.analisis`) solo si la persona marca *Recordar la clave*. Los demás ajustes (proveedor elegido, modelo) sí se recuerdan.
 
 ## Diseño
 
@@ -146,7 +226,11 @@ npm run plantilla     # vuelve a generar ejemplo/plantilla.docx
 
 `probar.js` carga `index.html` en jsdom con los scripts reales y simula soltar los archivos. Le añade `TextDecoder` a jsdom porque mammoth lo necesita.
 
-`npm run probar:crear` (`probar-crear.js`) prueba la sección Crear: ida y vuelta JSON/XML, pegar desde Excel, Markdown con secciones de datos, errores con número de línea y navegación. jsdom no implementa `execCommand`, así que el formato del texto (títulos, negrita, listas) hay que probarlo en un navegador de verdad.
+`npm run probar:crear` (`probar-crear.js`) prueba el resto: ida y vuelta JSON/XML, pegar desde Excel, Markdown con secciones de datos, errores con número de línea, pestañas (cambiar, cerrar, Mis documentos, guía), Excel y PowerPoint, y *Analizar* (la solicitud a Claude se simula con un `fetch` falso: **las pruebas nunca llaman a internet**).
+
+Arreglos que necesita jsdom (y que el navegador no): `TextDecoder`, `setImmediate` (JSZip programa su trabajo con `postMessage`, que jsdom no entrega igual), un `localStorage` en memoria (jsdom no lo da en `file://`) y un `execCommand` vacío. jsdom tampoco tiene `<dialog>.showModal`, así que el Excel usa la respuesta de `confirm`. El formato del texto (títulos, negrita, listas) hay que probarlo en un navegador de verdad.
+
+`npm run office` vuelve a generar `ejemplo/ventas.xlsx` y `ejemplo/presentacion.pptx` (con `exceljs` y `pptxgenjs`, solo para desarrollo).
 
 Revisión visual sin instalar nada, con Chrome o Edge headless:
 
@@ -158,7 +242,9 @@ Chrome headless en Windows no baja de unos 500 px de ancho; para ver cómo queda
 
 Prueba manual final: abre `index.html` con doble clic, suelta `ejemplo/plantilla.docx` y comprueba títulos, listas anidadas, tabla, cita, bloque de código e imagen. Descarga el `.zip` y ábrelo.
 
-Para Crear: abre la plantilla *Acta de reunión*, cambia un título con el menú amarillo, inserta una sección *Datos en XML*, pega celdas de Excel en ella, cambia a la vista Markdown y vuelve. Luego abre *Lista de productos*, agrega un campo, cambia a `.xml` y descarga.
+Luego suelta a la vez `ventas.xlsx` y `presentacion.pptx`: elige *Como datos* para el Excel y revisa las dos pestañas. Recarga la página: deben volver las mismas pestañas.
+
+Para los editores: abre la plantilla *Acta de reunión*, cambia un título con el menú amarillo, inserta una sección *Datos en XML*, pega celdas de Excel en ella, cambia a la vista Markdown y vuelve. Luego abre *Lista de productos*, agrega un campo, cambia a `.xml` y descarga. Por último, *Analizar* con la revisión rápida.
 
 ## Actualizar librerías de `vendor/`
 
@@ -176,6 +262,10 @@ Después de actualizar, ejecuta `npm run probar:todo` y compara la salida.
 
 ## Ideas pendientes
 
-- Editar el Markdown del convertidor antes de descargarlo (hoy es de solo lectura). Podría abrirse en el editor de Crear.
+- Probar en Chrome/Edge de Windows (se probó en Chromium sobre Linux) y regenerar `docs/capturas/` con las fuentes de Windows.
+- Excel como datos no muestra sus consejos (celdas combinadas…): el editor de datos no tiene el recuadro de consejos del documento.
+- Al importar JSON, un `null` se vuelve texto vacío; los atributos XML se vuelven campos.
+- Otros proveedores de análisis (otro servicio en la nube, un modelo local en `http://localhost`) con `W.analisis.registrar`.
+- Analizar más allá del resumen: aplicar las sugerencias al documento con un clic.
 - Conservar las notas al pie como `[^1]` (hoy mammoth las deja como enlaces al final).
 - Modo oscuro.

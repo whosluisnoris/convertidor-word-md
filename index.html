@@ -9,12 +9,9 @@
 </head>
 <body>
 <header class="barra">
-  <a class="logo" href="#convertir" data-ir="convertir">word<span>.md</span></a>
-  <nav class="nav" aria-label="Secciones">
-    <a href="#convertir" data-ir="convertir" aria-current="page">Convertidor</a>
-    <a href="#crear" data-ir="crear">Crear</a>
-    <a href="#guia" data-ir="guia">Guía</a>
-  </nav>
+  <a class="logo" id="logo" href="#inicio">word<span>.md</span></a>
+  <nav class="pestanas" id="pestanas" aria-label="Pestañas abiertas"></nav>
+  <button type="button" class="btn-guia" id="abrir-guia"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5h5a2 2 0 0 1 2 2V16a2 2 0 0 0-2-2H3zM17 4.5h-5a2 2 0 0 0-2 2V16a2 2 0 0 1 2-2h5z"/></svg>Guía</button>
 </header>
 
 <main>
@@ -23,26 +20,55 @@
     <div class="hero">
       <div class="hero-circulo" aria-hidden="true"></div>
       <div class="hero-cuadro" aria-hidden="true"></div>
-      <h1>Tu Word,<br>ahora en<br>Markdown.</h1>
-      <p>Gratis, sin instalar nada y sin internet. Tus archivos nunca salen de tu computadora.</p>
+      <h1>¿Qué<br>quieres<br>hacer<br>hoy?</h1>
+      <p>Convierte un Word, un Excel o un PowerPoint, escribe un documento o arma un archivo de datos. Sin internet y sin saber programar.</p>
     </div>
 
     <div class="lado">
-      <label class="soltar" id="soltar" for="entrada">
-        <span class="fichas" aria-hidden="true">
-          <span class="ficha f1"></span><span class="ficha f2"></span><span class="ficha f3">.docx</span>
-        </span>
-        <span class="soltar-titulo">Suelta tus archivos</span>
-        <span class="soltar-sub">Uno o varios .docx a la vez</span>
-        <span class="btn btn-negro">Elegir archivos</span>
-        <input id="entrada" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple class="oculto">
-      </label>
+      <div class="opciones-inicio">
+        <label class="soltar opcion" id="soltar" for="entrada">
+          <span class="fichas chicas" aria-hidden="true">
+            <span class="ficha f1"></span><span class="ficha f2"></span><span class="ficha f3">.docx</span>
+          </span>
+          <span class="opcion-titulo">Convertir un archivo</span>
+          <span class="opcion-texto">Word, Excel o PowerPoint. Suelta uno o varios: cada uno se abre en su pestaña.</span>
+          <span class="btn btn-negro">Elegir archivos</span>
+          <input id="entrada" type="file" accept=".docx,.xlsx,.xlsm,.pptx,.md,.markdown,.txt,.json,.xml" multiple class="oculto">
+        </label>
+        <button type="button" class="opcion amarillo" id="crear-documento">
+          <span class="opcion-dibujo dibujo-doc" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <span class="opcion-titulo">Un documento</span>
+          <span class="opcion-texto">Títulos, párrafos, listas y tablas, como en Word. Puede llevar secciones de datos.</span>
+          <span class="opcion-pie"><span class="ext">.md</span><span class="flecha"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"/></svg></span></span>
+        </button>
+        <button type="button" class="opcion coral" id="crear-datos">
+          <span class="opcion-dibujo dibujo-datos" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          <span class="opcion-titulo">Datos</span>
+          <span class="opcion-texto">Fichas, listas y tablas que otros programas pueden leer.</span>
+          <span class="opcion-pie"><span class="ext">.json</span><span class="ext">.xml</span><span class="flecha"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"/></svg></span></span>
+        </button>
+      </div>
       <div class="error" id="error-inicio" role="alert" hidden></div>
-      <ol class="pasos">
-        <li class="paso amarillo"><b>1</b>Suelta el .docx</li>
-        <li class="paso coral"><b>2</b>Revisa el resultado</li>
-        <li class="paso negro"><b>3</b>Descarga tu .md</li>
-      </ol>
+
+      <div class="inicio-abajo">
+        <section class="mis-documentos" aria-labelledby="titulo-mis-documentos">
+          <h2 id="titulo-mis-documentos">Mis documentos <small>guardados en este equipo</small></h2>
+          <ul class="lista-documentos" id="lista-documentos"></ul>
+          <p class="mis-documentos-vacio" id="mis-documentos-vacio">Aquí aparecerán los documentos que crees o conviertas. Aunque cierres una pestaña, el documento sigue aquí.</p>
+        </section>
+        <section class="plantillas" aria-labelledby="titulo-plantillas">
+          <h2 id="titulo-plantillas">Plantillas</h2>
+          <div class="plantillas-lista">
+            <button type="button" data-plantilla="productos"><span class="chip-tipo t-tabla" aria-hidden="true">Tabla</span><span><b>Lista de productos</b><small>Nombre, precio, disponible · .json</small></span></button>
+            <button type="button" data-plantilla="contactos"><span class="chip-tipo t-texto" aria-hidden="true">Aa</span><span><b>Contactos</b><small>Nombre, correo, teléfono · .json</small></span></button>
+            <button type="button" data-plantilla="configuracion"><span class="chip-tipo t-sino" aria-hidden="true">S/N</span><span><b>Configuración</b><small>Opciones que se activan o no · .xml</small></span></button>
+            <button type="button" data-plantilla="acta"><span class="chip-tipo t-titulo" aria-hidden="true">#</span><span><b>Acta de reunión</b><small>Acuerdos y pendientes · .md</small></span></button>
+          </div>
+          <label class="abrir" for="crear-abrir"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13V3M6 7l4-4 4 4M4 13v3h12v-3"/></svg>Abrir un .md, .json o .xml
+            <input id="crear-abrir" type="file" accept=".md,.markdown,.txt,.json,.xml,.docx,.xlsx,.xlsm,.pptx" multiple class="oculto">
+          </label>
+        </section>
+      </div>
     </div>
   </section>
 
@@ -52,89 +78,6 @@
       <span class="ficha f1"></span><span class="ficha f2"></span><span class="ficha f3">.md</span>
     </div>
     <p id="texto-cargando" aria-live="polite">Convirtiendo…</p>
-  </section>
-
-  <!-- ============ RESULTADO ============ -->
-  <section id="vista-resultado" class="vista resultado" hidden>
-    <div class="panel-izq">
-      <div class="tarjeta-azul">
-        <div class="tarjeta-circulo" aria-hidden="true"></div>
-        <div class="listo">¡Listo!</div>
-        <div class="nombre" id="res-nombre"></div>
-        <div class="chips" id="res-chips"></div>
-      </div>
-
-      <div class="archivos" id="res-archivos" hidden>
-        <div class="archivos-titulo" id="res-archivos-titulo"></div>
-        <div class="archivos-lista" id="res-archivos-lista" role="tablist" aria-label="Archivos convertidos"></div>
-      </div>
-
-      <button class="btn btn-bloque btn-negro" id="btn-descargar"></button>
-      <button class="btn btn-bloque btn-blanco" id="btn-todos" hidden>Descargar todos (.zip)</button>
-      <button class="btn btn-bloque btn-blanco" id="btn-copiar">Copiar Markdown</button>
-      <div class="consejos" id="res-consejos" hidden></div>
-      <label class="otro" for="entrada-otro">
-        + Convertir otro
-        <input id="entrada-otro" type="file" accept=".docx" multiple class="oculto">
-      </label>
-    </div>
-
-    <div class="panel-der">
-      <div class="pestanas-movil" role="tablist" aria-label="Ver">
-        <button role="tab" aria-selected="true" data-panel="md">Markdown</button>
-        <button role="tab" aria-selected="false" data-panel="vista">Vista previa</button>
-      </div>
-      <div class="columna col-md" data-col="md">
-        <span class="etiqueta">Markdown</span>
-        <pre class="codigo" id="res-md" tabindex="0" aria-label="Markdown generado"></pre>
-      </div>
-      <div class="columna col-vista" data-col="vista">
-        <span class="etiqueta">Vista previa</span>
-        <article class="previa" id="res-previa"></article>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ CREAR: ELEGIR ============ -->
-  <section id="vista-crear" class="vista crear" hidden>
-    <div class="hero">
-      <div class="hero-circulo" aria-hidden="true"></div>
-      <div class="hero-cuadro" aria-hidden="true"></div>
-      <h1>¿Qué<br>quieres<br>crear?</h1>
-      <p>No necesitas saber programar. Tú escribes o llenas un formulario; el archivo se arma solo.</p>
-    </div>
-
-    <div class="lado">
-      <div class="opciones-crear">
-        <button type="button" class="opcion amarillo" id="crear-documento">
-          <span class="opcion-dibujo dibujo-doc" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-          <span class="opcion-titulo">Un documento</span>
-          <span class="opcion-texto">Títulos, párrafos, listas y tablas, como en Word. También puede llevar secciones de datos.</span>
-          <span class="opcion-borrador" id="borrador-documento" hidden></span>
-          <span class="opcion-pie"><span class="ext">.md</span><span class="flecha"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"/></svg></span></span>
-        </button>
-        <button type="button" class="opcion coral" id="crear-datos">
-          <span class="opcion-dibujo dibujo-datos" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
-          <span class="opcion-titulo">Datos</span>
-          <span class="opcion-texto">Fichas, listas y tablas que otros programas pueden leer.</span>
-          <span class="opcion-borrador" id="borrador-datos" hidden></span>
-          <span class="opcion-pie"><span class="ext">.json</span><span class="ext">.xml</span><span class="flecha"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"/></svg></span></span>
-        </button>
-      </div>
-
-      <div class="plantillas">
-        <h2>O empieza con una plantilla</h2>
-        <div class="plantillas-lista">
-          <button type="button" data-plantilla="productos"><span class="chip-tipo t-tabla" aria-hidden="true">Tabla</span><span><b>Lista de productos</b><small>Nombre, precio, disponible · .json</small></span></button>
-          <button type="button" data-plantilla="contactos"><span class="chip-tipo t-texto" aria-hidden="true">Aa</span><span><b>Contactos</b><small>Nombre, correo, teléfono · .json</small></span></button>
-          <button type="button" data-plantilla="configuracion"><span class="chip-tipo t-sino" aria-hidden="true">S/N</span><span><b>Configuración</b><small>Opciones que se activan o no · .xml</small></span></button>
-          <button type="button" data-plantilla="acta"><span class="chip-tipo t-titulo" aria-hidden="true">#</span><span><b>Acta de reunión</b><small>Títulos, acuerdos y pendientes · .md</small></span></button>
-        </div>
-        <label class="abrir" for="crear-abrir"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13V3M6 7l4-4 4 4M4 13v3h12v-3"/></svg>Abrir un .md, .json o .xml que ya tengas
-          <input id="crear-abrir" type="file" accept=".md,.markdown,.txt,.json,.xml" class="oculto">
-        </label>
-      </div>
-    </div>
   </section>
 
   <!-- ============ CREAR: DOCUMENTO ============ -->
@@ -180,9 +123,14 @@
       <button class="btn btn-bloque btn-negro" id="doc-descargar"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3v10M6 9l4 4 4-4M4 17h12"/></svg><span>Descargar .md</span></button>
       <button class="btn btn-bloque btn-blanco" id="doc-copiar">Copiar Markdown</button>
       <button class="btn btn-bloque btn-borde" id="doc-datos" hidden></button>
+      <button class="btn btn-bloque btn-borde" id="doc-analizar"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="M13.2 13.2L17 17"/></svg>Analizar</button>
+      <div class="consejos consejos-origen" id="doc-origen" hidden>
+        <button type="button" class="btn-quitar" id="doc-origen-cerrar" aria-label="Cerrar los consejos de la conversión" title="Cerrar"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg></button>
+        <b>Consejos de la conversión</b>
+        <ul></ul>
+      </div>
       <div class="consejos" id="doc-consejo"></div>
       <div class="guardado" id="doc-guardado" aria-live="polite"><span class="punto" aria-hidden="true"></span><span class="texto">Guardado en este equipo</span></div>
-      <button type="button" class="enlace-nuevo" id="doc-nuevo">Empezar un documento nuevo</button>
     </aside>
   </section>
 
@@ -227,26 +175,27 @@
       <div class="chips chips-claros" id="datos-chips"></div>
       <button class="btn btn-bloque btn-negro" id="datos-descargar"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3v10M6 9l4 4 4-4M4 17h12"/></svg><span>Descargar .json</span></button>
       <button class="btn btn-bloque btn-blanco" id="datos-copiar">Copiar JSON</button>
+      <button class="btn btn-bloque btn-borde" id="datos-analizar"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="M13.2 13.2L17 17"/></svg>Analizar</button>
       <div class="consejos" id="datos-consejo"></div>
       <div class="guardado" id="datos-guardado" aria-live="polite"><span class="punto" aria-hidden="true"></span><span class="texto">Guardado en este equipo</span></div>
-      <button type="button" class="enlace-nuevo" id="datos-nuevo">Empezar datos nuevos</button>
     </aside>
   </section>
 
   <!-- ============ GUÍA ============ -->
   <section id="vista-guia" class="vista guia" hidden>
     <div class="guia-hero">
-      <h1>Cómo usarlo y cómo preparar tu Word</h1>
-      <p>Markdown solo entiende estructura: títulos, listas, tablas, énfasis. Si tu Word usa los estilos correctos, el resultado queda perfecto a la primera. Y si prefieres empezar desde cero, en <b>Crear</b> puedes escribir documentos y armar archivos de datos.</p>
+      <h1>Cómo usar word.md</h1>
+      <p>Convierte un Word, un Excel o un PowerPoint, escribe un documento o arma un archivo de datos. Cada cosa se abre en su pestaña, como en el navegador, y todo se guarda solo en tu computadora.</p>
     </div>
 
     <div class="guia-grid">
       <article class="guia-bloque amarillo">
-        <h2>Usar el convertidor</h2>
+        <h2>Convertir un archivo</h2>
         <ol>
           <li>Abre <code>index.html</code> con doble clic. Se abre en tu navegador (Chrome o Edge).</li>
-          <li>Arrastra uno o varios archivos <code>.docx</code> a la zona blanca, o pulsa <b>Elegir archivos</b>.</li>
-          <li>Revisa el Markdown y la vista previa. Lee los consejos amarillos si aparecen.</li>
+          <li>En <b>Inicio</b>, arrastra uno o varios archivos a la zona blanca, o pulsa <b>Elegir archivos</b>. Sirven <b>Word</b> (<code>.docx</code>), <b>Excel</b> (<code>.xlsx</code>) y <b>PowerPoint</b> (<code>.pptx</code>).</li>
+          <li>Cada archivo se abre en su <b>pestaña</b>, listo para corregir: cambia títulos, borra o agrega lo que quieras. Lee los consejos amarillos si aparecen.</li>
+          <li>Con un Excel, la app pregunta si lo quieres <b>como datos</b> (<code>.json</code>/<code>.xml</code>) o <b>como tabla en un documento</b> (<code>.md</code>). Cada hoja se vuelve una tabla.</li>
           <li>Pulsa <b>Descargar</b>. Si el documento tiene imágenes recibirás un <code>.zip</code> con el <code>.md</code> y una carpeta <code>imagenes/</code>; descomprímelo y mantén ambos juntos.</li>
         </ol>
         <p class="nota">No necesita internet: puedes copiar la carpeta completa a una memoria USB y usarla en cualquier computadora.</p>
@@ -306,7 +255,7 @@
           <div>
             <h3>Un documento (.md)</h3>
             <ol>
-              <li>Ve a <b>Crear › Un documento</b> y escribe como en Word.</li>
+              <li>En el <b>Inicio</b>, pulsa <b>Un documento</b> y escribe como en Word.</li>
               <li>Elige el tipo de texto en el botón amarillo (<i>Párrafo</i>, <i>Título 1</i>, <i>Cita</i>…) o escribe <code>#</code> y un espacio al inicio de una línea.</li>
               <li>Con <b>+ Insertar</b> agregas tablas, imágenes y <b>secciones de datos</b> en JSON o XML. Se llenan como un formulario y en el <code>.md</code> quedan como <code>```json</code> o <code>```xml</code>.</li>
               <li>El botón <b>Markdown</b> muestra el texto tal cual se guarda; puedes corregirlo ahí y volver a <b>Formateado</b> (Ctrl+M).</li>
@@ -315,7 +264,7 @@
           <div>
             <h3>Datos (.json o .xml)</h3>
             <ol>
-              <li>Ve a <b>Crear › Datos</b> o elige una plantilla.</li>
+              <li>En el <b>Inicio</b>, pulsa <b>Datos</b> o elige una plantilla.</li>
               <li>Pulsa <b>+ Agregar campo</b> y elige qué quieres guardar. Ponle el nombre que quieras: la app escribe el nombre técnico por ti.</li>
               <li>Para muchas filas usa una <b>Tabla</b>. Puedes pegar celdas copiadas de Excel directamente en ella.</li>
               <li>Elige <b>.json</b> o <b>.xml</b> en <i>Guardar como</i> y pulsa <b>Descargar</b>.</li>
@@ -336,11 +285,32 @@
         </table>
         <p class="nota">Lo que escribes se guarda solo en este navegador, en tu computadora. Si una sección de datos tiene un error al corregirla a mano, la app te marca la línea antes de volver a la vista con formato.</p>
       </article>
+
+      <article class="guia-bloque amarillo">
+        <h2>Pestañas y Mis documentos</h2>
+        <ul>
+          <li><b>Inicio</b> siempre está a la izquierda: desde ahí conviertes, creas o abres algo.</li>
+          <li>El botón amarillo <b>+</b> abre algo nuevo en otra pestaña. Si tienes varias abiertas, también descarga todas juntas en un <code>.zip</code>.</li>
+          <li>La <b>×</b> cierra la pestaña, pero el documento <b>no se borra</b>: sigue en <b>Mis documentos</b>, en el Inicio. Borrar solo se hace desde ahí, con el bote de basura.</li>
+          <li>Al volver a abrir la app aparecen las mismas pestañas que tenías.</li>
+          <li>Todo se guarda en este navegador. Si borras los datos de navegación o usas otro navegador, no estará: descarga lo importante.</li>
+        </ul>
+      </article>
+
+      <article class="guia-bloque blanco">
+        <h2>Analizar un documento</h2>
+        <ul>
+          <li>El botón <b>Analizar</b> (en el panel derecho) revisa el documento de la pestaña.</li>
+          <li><b>Revisión rápida</b> funciona sin internet: avisa si faltan títulos, si se salta un nivel, si hay imágenes sin descripción o datos vacíos.</li>
+          <li><b>Claude (Anthropic)</b> escribe un resumen y sugerencias con inteligencia artificial. Es opcional: <b>usa internet</b> y necesita tu clave de API de Anthropic (el uso se cobra en tu cuenta). Antes de enviar, la app te dice qué documento sale de tu computadora. No lo uses con información confidencial.</li>
+          <li>La clave no se guarda, salvo que marques <i>Recordar la clave en este navegador</i>.</li>
+        </ul>
+      </article>
     </div>
 
     <div class="guia-pie">
       <p>¿Quieres un ejemplo? En la carpeta <code>ejemplo/</code> está <b>plantilla.docx</b>, que usa todos los elementos soportados. Ábrelo en Word para copiar sus estilos, o conviértelo aquí para ver el resultado.</p>
-      <a class="btn btn-negro" href="#convertir" data-ir="convertir">Ir al convertidor</a>
+      <a class="btn btn-negro" href="#inicio" data-ir="inicio">Ir al Inicio</a>
     </div>
   </section>
 </main>
@@ -360,12 +330,42 @@
   </form>
 </dialog>
 
+<dialog class="dialogo" id="dialogo-opciones" aria-labelledby="opciones-titulo">
+  <form method="dialog">
+    <h2 id="opciones-titulo"></h2>
+    <p id="opciones-texto"></p>
+    <div class="opciones-lista" id="opciones-lista"></div>
+    <div class="dialogo-botones"><button class="btn btn-blanco" value="cancelar">Cancelar</button></div>
+  </form>
+</dialog>
+
+<dialog class="dialogo dialogo-ancho" id="analisis" aria-labelledby="analisis-titulo">
+  <div class="analisis-cabeza">
+    <h2 id="analisis-titulo">Analizar</h2>
+    <button type="button" class="btn-quitar" id="analisis-cerrar" aria-label="Cerrar"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg></button>
+  </div>
+  <fieldset class="analisis-proveedores">
+    <legend>¿Con qué lo analizamos?</legend>
+    <div id="analisis-proveedores"></div>
+  </fieldset>
+  <div class="analisis-config" id="analisis-config" hidden></div>
+  <label class="campo-ajuste" id="analisis-pregunta-caja" for="analisis-pregunta" hidden><span>¿Algo en particular? (opcional)</span>
+    <textarea id="analisis-pregunta" rows="2" placeholder="Por ejemplo: ¿falta algún dato importante?"></textarea>
+  </label>
+  <p class="analisis-privacidad" id="analisis-privacidad" hidden></p>
+  <div class="dialogo-botones"><button type="button" class="btn btn-negro" id="analisis-ir">Analizar</button></div>
+  <div class="analisis-resultado" id="analisis-resultado" aria-live="polite"></div>
+</dialog>
+
 <script src="vendor/mammoth.browser.min.js"></script>
 <script src="vendor/turndown.js"></script>
 <script src="vendor/turndown-plugin-gfm.js"></script>
 <script src="vendor/marked.min.js"></script>
 <script src="vendor/jszip.min.js"></script>
 <script src="app.js"></script>
+<script src="importar.js"></script>
 <script src="crear.js"></script>
+<script src="analisis.js"></script>
+<script src="pestanas.js"></script>
 </body>
 </html>

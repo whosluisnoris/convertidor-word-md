@@ -6,11 +6,14 @@
     "plantilla": "node generar-plantilla.js ../ejemplo/plantilla.docx",
     "desordenado": "node -e \"require('fs').mkdirSync('salida',{recursive:true})\" && node generar-desordenado.js salida/desordenado.docx",
     "probar": "node probar.js ../ejemplo/plantilla.docx",
-    "probar:todo": "npm run desordenado && node probar.js salida/desordenado.docx ../ejemplo/plantilla.docx notas.txt",
-    "probar:crear": "node probar-crear.js"
+    "probar:todo": "npm run desordenado && node probar.js salida/desordenado.docx ../ejemplo/plantilla.docx viejo.xls",
+    "probar:crear": "node probar-crear.js",
+    "office": "node generar-office.js"
   },
   "devDependencies": {
     "docx": "^9.0.0",
-    "jsdom": "^24.0.0"
+    "exceljs": "^4.4.0",
+    "jsdom": "^24.0.0",
+    "pptxgenjs": "^4.0.1"
   }
 }
