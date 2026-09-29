@@ -157,7 +157,7 @@
   }
 
   function pintarPestanas() {
-    var nav = $('pestanas');
+    var nav = $('pestanas'), desplazado = nav.scrollLeft;
     nav.innerHTML = '';
     var inicio = el('button', { type: 'button', clase: 'pestana-inicio', 'aria-current': estado.activa === 'inicio' ? 'page' : null, html: CASA + '<span>Inicio</span>' });
     inicio.addEventListener('click', function () { activar('inicio'); });
@@ -181,8 +181,15 @@
     mas.addEventListener('click', function () { menuNueva(mas); });
     nav.appendChild(mas);
     $('abrir-guia').hidden = estado.guia;
+    // Se mueve solo la fila de pestañas, nunca la página: esto corre en cada guardado
+    // automático, y scrollIntoView() subía la página hasta la barra mientras se escribía.
+    nav.scrollLeft = desplazado;
     var activa = nav.querySelector('.pestana.activa');
-    if (activa && activa.scrollIntoView) activa.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    if (activa) {
+      var caja = nav.getBoundingClientRect(), p = activa.getBoundingClientRect();
+      if (p.left < caja.left) nav.scrollLeft += p.left - caja.left;
+      else if (p.right > caja.right) nav.scrollLeft += p.right - caja.right;
+    }
   }
 
   function menuNueva(boton) {
