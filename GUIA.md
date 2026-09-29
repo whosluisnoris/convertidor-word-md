@@ -69,8 +69,9 @@ En el **Inicio** eliges entre **Un documento** (`.md`) o **Datos** (`.json` o `.
 1. Escribe como en Word.
 2. Elige el tipo de texto en el botón amarillo (*Párrafo*, *Título 1*, *Cita*…) o escribe `#` y un espacio al inicio de una línea.
 3. Con **+ Insertar** agregas tablas, imágenes y **secciones de datos** en JSON o XML. Se llenan como un formulario y en el `.md` quedan como un bloque ```` ```json ```` o ```` ```xml ````.
-4. El botón **Markdown** muestra el texto tal cual se guarda. Puedes corregirlo ahí y volver a **Formateado** (Ctrl+M).
-5. **Descargar solo los datos** guarda las secciones de datos como archivos aparte.
+4. Con el cursor dentro de una tabla, el botón **Tabla** agrega o quita filas y columnas. **Tab** pasa a la celda siguiente y, en la última celda, agrega una fila.
+5. El botón **Markdown** muestra el texto tal cual se guarda. Puedes corregirlo ahí y volver a **Formateado** (Ctrl+M).
+6. **Descargar solo los datos** guarda las secciones de datos como archivos aparte.
 
 ### Datos (.json o .xml)
 

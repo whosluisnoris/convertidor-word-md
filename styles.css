@@ -311,6 +311,9 @@ a:focus-visible, button:focus-visible, .soltar:focus-within, .otro:focus-within,
   display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
   padding: 8px; border-radius: var(--r-medio); background: var(--blanco);
 }
+/* La barra se queda arriba al bajar por un documento largo: así «Tabla», «Párrafo» o la negrita
+   siempre están a mano sin perder de vista lo que se escribe. */
+.editor-principal > .barra-editor { position: sticky; top: 12px; z-index: 5; box-shadow: 0 10px 24px -18px rgba(22,22,29,.45); }
 .separador { width: 2px; height: 26px; background: var(--gris); margin: 0 4px; }
 .empujar { margin-left: auto; }
 .grupo-botones { display: flex; gap: 6px; }
