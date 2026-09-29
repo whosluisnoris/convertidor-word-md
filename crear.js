@@ -590,8 +590,18 @@
     var r = boton.getBoundingClientRect();
     var ancho = caja.offsetWidth, alto = caja.offsetHeight;
     var izq = Math.max(12, Math.min(r.left, window.innerWidth - ancho - 12));
-    var arriba = r.bottom + 8;
-    if (arriba + alto > window.innerHeight - 12 && r.top - alto - 8 > 12) arriba = r.top - alto - 8;
+    // Se abre debajo del botón; si no cabe, encima. Si no cabe en ninguno de los dos lados,
+    // va en el que tiene más espacio y se recorta a ese alto con su propia barra de desplazamiento
+    // (desplazar la página cerraría el menú, así que nunca debe salirse de la ventana).
+    var abajo = window.innerHeight - r.bottom - 8 - 12, encima = r.top - 8 - 12;
+    var arriba;
+    if (alto <= abajo || abajo >= encima) {
+      arriba = r.bottom + 8;
+      caja.style.maxHeight = Math.max(160, abajo) + 'px';
+    } else {
+      caja.style.maxHeight = encima + 'px';
+      arriba = r.top - 8 - Math.min(alto, encima);
+    }
     caja.style.left = izq + 'px';
     caja.style.top = Math.max(12, arriba) + 'px';
     boton.setAttribute('aria-expanded', 'true');
