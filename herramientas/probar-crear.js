@@ -174,6 +174,32 @@ JSDOM.fromFile(path.join(raiz, 'index.html'), {
       assert.ok(!d.getElementById('doc-datos').hidden);
     });
 
+    await prueba('Tablas del texto: agregar y quitar filas y columnas', () => {
+      C.cargarDocumento('| Nombre | Precio |\n| :--- | ---: |\n| Café | 30 |\n| Té | 25 |', { nombre: 'tabla' });
+      const enCelda = (texto) => {
+        const celda = [...d.querySelectorAll('#doc-editor td, #doc-editor th')].find((c) => c.textContent === texto);
+        const r = d.createRange();
+        r.setStart(celda, 0);
+        C.estado.doc.rango = r;
+      };
+      enCelda('Nombre');
+      C.accionTabla('col-derecha');
+      enCelda('Café');
+      C.accionTabla('fila-abajo');
+      enCelda('Té');
+      C.accionTabla('fila-arriba');
+      assert.strictEqual(C.markdownDelEditor(),
+        '| Nombre | Columna 3 | Precio |\n| :-- | :-- | --: |\n| Café |  | 30 |\n|  |  |  |\n|  |  |  |\n| Té |  | 25 |\n');
+      enCelda('Café');
+      C.accionTabla('quitar-fila');
+      enCelda('Columna 3');
+      C.accionTabla('quitar-col');
+      assert.strictEqual(C.markdownDelEditor(), '| Nombre | Precio |\n| :-- | --: |\n|  |  |\n|  |  |\n| Té | 25 |\n');
+      enCelda('Té');
+      C.accionTabla('quitar-tabla');
+      assert.strictEqual(d.querySelectorAll('#doc-editor table').length, 0);
+    });
+
     console.log('Editor de datos');
     await prueba('Plantilla de productos pinta el formulario', () => {
       d.querySelector('[data-plantilla="productos"]').click();

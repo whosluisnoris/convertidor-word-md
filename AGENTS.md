@@ -162,6 +162,8 @@ Para enfocar algo después de repintar, marca el objeto del modelo con `_enfocar
 - Las secciones de datos detienen `keydown`, `input`, `paste`… para que el editor de texto no los procese.
 - Al volver de la vista Markdown, `validarSecciones()` revisa cada ```` ```json ````/```` ```xml ```` y marca la línea del error. No se puede volver hasta corregirlo.
 - Lo pegado se pasa por Markdown (`turndown` → `marked`), así queda limpio y con la misma estructura.
+- **Tablas del texto** (las de Markdown, no las secciones de datos): el botón *Tabla* de la barra se activa con el cursor en una celda (`celdaActual()`) y abre `opcionesTabla()` → `accionTabla()`: fila arriba/abajo, columna a la izquierda/derecha, quitar fila, columna o tabla. La fila del `<thead>` es el encabezado: no se quita ni se agrega otra encima (GFM exige una). Tab/Mayús+Tab recorren las celdas y Tab en la última agrega una fila. Estos cambios tocan el DOM directamente, así que Ctrl+Z no los deshace. `markdownDelEditor()` quita el `<br>` que el editor deja al final de las celdas vacías.
+- La barra de herramientas es `position: sticky`: sigue a la vista al bajar por un documento largo.
 - Atajos: `# `, `## `, `### `, `- `, `1. `, `> ` al inicio de un párrafo; Ctrl+Mayús+0…3 para el tipo de texto (Ctrl+Alt choca con AltGr en teclados en español y Ctrl+número cambia de pestaña); Ctrl+K enlace; Ctrl+M cambia de vista.
 
 ### Lo que se guarda de cada editor

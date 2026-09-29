@@ -1343,6 +1343,8 @@
       pre.querySelectorAll('br').forEach(function (br) { br.replaceWith('\n'); });
       pre.querySelectorAll('div,p').forEach(function (d) { d.replaceWith('\n' + d.textContent); });
     });
+    // El <br> que el editor deja al final de una celda solo la mantiene visible: no es un salto de línea.
+    copiaEd.querySelectorAll('td > br:last-child, th > br:last-child').forEach(function (br) { br.remove(); });
     W.prepararCodigo(copiaEd);
     if (!copiaEd.textContent.trim() && !copiaEd.querySelector('[data-bloque],img,hr,table')) return '';
     return W.limpiarMarkdown(tdDoc.turndown(copiaEd));
@@ -1356,6 +1358,7 @@
     else editor.innerHTML = '<h1><br></h1><p><br></p>';
     asegurarParrafoFinal();
     marcarVacios();
+    actualizarBotonTabla();
   }
 
   function cargarDocumento(md, opciones) {
@@ -1373,7 +1376,12 @@
       if (b && viejo && b.formato === viejo.formato) { heredarEtiquetas(b.nodo, viejo.nodo); repintarBloque(n.getAttribute('data-bloque')); }
     });
     ['doc-tipo', 'doc-insertar'].forEach(function (id) { $(id).disabled = false; });
-    document.querySelectorAll('#doc-formato button').forEach(function (b) { b.disabled = false; });
+    $('doc-tabla').addEventListener('click', function () {
+    var celda = celdaActual();
+    if (!celda) return;
+    abrirMenu($('doc-tabla'), 'Filas y columnas', opcionesTabla(celda), function (id) { accionTabla(id, celda); });
+  });
+  document.querySelectorAll('#doc-formato button').forEach(function (b) { b.disabled = false; });
     $('doc-hoja').hidden = false;
     $('doc-codigo').hidden = true;
     document.querySelectorAll('#doc-vistas button').forEach(function (b) {
@@ -1429,6 +1437,7 @@
       b.setAttribute('aria-pressed', b.dataset.vista === vista ? 'true' : 'false');
     });
     ['doc-tipo', 'doc-insertar'].forEach(function (id) { $(id).disabled = vista !== 'formateado'; });
+    actualizarBotonTabla();
     document.querySelectorAll('#doc-formato button').forEach(function (b) { b.disabled = vista !== 'formateado'; });
     mostrarError('doc-error', '');
     pintarPanelDoc();
@@ -1529,6 +1538,11 @@
     var t = tipoActual();
     var nombres = { p: 'Párrafo', h1: 'Título 1', h2: 'Título 2', h3: 'Título 3', h4: 'Título 4', h5: 'Título 5', h6: 'Título 6', blockquote: 'Cita', pre: 'Código', li: 'Lista' };
     $('doc-tipo').querySelector('span').textContent = nombres[t] || 'Párrafo';
+    actualizarBotonTabla();
+  }
+  // El botón «Tabla» solo se puede usar con el cursor dentro de una tabla del texto.
+  function actualizarBotonTabla() {
+    $('doc-tabla').disabled = doc.vista !== 'formateado' || !celdaActual();
   }
   function aplicarTipo(tag) {
     restaurarSeleccion();
@@ -1578,6 +1592,133 @@
     }
     marcarVacios();
     cambioDoc();
+  }
+
+  // ---------- Filas y columnas de las tablas del texto ----------
+  // La primera fila (thead) es el encabezado: en Markdown debe haber exactamente una,
+  // así que no se quita ni se agrega otra encima.
+  function celdaActual() {
+    var n = doc.rango ? doc.rango.startContainer : null;
+    if (!n || !dentroDelEditor(n)) return null;
+    var c = elementoDe(n).closest('td,th');
+    return c && dentroDelEditor(c) && !c.closest('[data-bloque]') ? c : null;
+  }
+  function esEncabezado(fila) { return fila.parentNode.nodeName === 'THEAD'; }
+  function celdaNueva(encabezado, modelo, texto) {
+    var c = document.createElement(encabezado ? 'th' : 'td');
+    // La alineación de la columna (:--- / :---: / ---:) se copia de la celda vecina.
+    if (modelo && modelo.getAttribute('align')) c.setAttribute('align', modelo.getAttribute('align'));
+    if (modelo && modelo.style.textAlign) c.style.textAlign = modelo.style.textAlign;
+    if (texto) c.textContent = texto; else c.appendChild(document.createElement('br'));
+    return c;
+  }
+  function nombreColumnaLibre(tabla) {
+    var usados = Array.prototype.map.call(tabla.rows[0].cells, function (c) { return c.textContent.trim(); });
+    var n = tabla.rows[0].cells.length + 1;
+    while (usados.indexOf('Columna ' + n) >= 0) n++;
+    return 'Columna ' + n;
+  }
+  function ponerCursor(celda, alFinal) {
+    var r = document.createRange();
+    r.selectNodeContents(celda);
+    r.collapse(!alFinal);
+    doc.rango = r;
+    restaurarSeleccion();
+  }
+  function agregarFila(celda, arriba) {
+    var fila = celda.parentNode, tabla = fila.closest('table');
+    var nueva = document.createElement('tr');
+    Array.prototype.forEach.call(fila.cells, function (c) { nueva.appendChild(celdaNueva(false, c)); });
+    if (esEncabezado(fila)) {
+      // Debajo del encabezado: la primera fila del cuerpo.
+      var cuerpo = tabla.tBodies[0] || tabla.appendChild(document.createElement('tbody'));
+      cuerpo.insertBefore(nueva, cuerpo.firstChild);
+    } else if (arriba) fila.before(nueva);
+    else fila.after(nueva);
+    return nueva.cells[celda.cellIndex] || nueva.cells[0];
+  }
+  function agregarColumna(celda, izquierda) {
+    var tabla = celda.closest('table'), i = celda.cellIndex, nombre = nombreColumnaLibre(tabla), primera = null;
+    Array.prototype.forEach.call(tabla.rows, function (fila) {
+      var ref = fila.cells[Math.min(i, fila.cells.length - 1)];
+      var cabeza = esEncabezado(fila), nueva = celdaNueva(cabeza, ref, cabeza ? nombre : '');
+      if (!ref) fila.appendChild(nueva);
+      else if (izquierda && fila.cells.length > i) ref.before(nueva);
+      else ref.after(nueva);
+      if (fila === celda.parentNode) primera = nueva;
+    });
+    return primera;
+  }
+  function quitarFila(celda) {
+    var fila = celda.parentNode, i = celda.cellIndex;
+    var vecina = fila.nextElementSibling || fila.previousElementSibling || fila.closest('table').rows[0];
+    fila.remove();
+    return vecina.cells[Math.min(i, vecina.cells.length - 1)];
+  }
+  function quitarColumna(celda) {
+    var tabla = celda.closest('table'), i = celda.cellIndex, fila = celda.parentNode;
+    Array.prototype.forEach.call(tabla.rows, function (f) { if (f.cells[i]) f.cells[i].remove(); });
+    return fila.cells[Math.min(i, fila.cells.length - 1)];
+  }
+  function quitarTabla(celda) {
+    var tabla = celda.closest('table');
+    var siguiente = tabla.nextElementSibling;
+    if (!siguiente || !/^(P|H[1-6])$/.test(siguiente.nodeName)) { siguiente = el('p', {}, [el('br')]); tabla.after(siguiente); }
+    tabla.remove();
+    return siguiente;
+  }
+  function opcionesTabla(celda) {
+    var fila = celda.parentNode, cabeza = esEncabezado(fila), columnas = fila.cells.length;
+    var o = [];
+    if (!cabeza) o.push({ id: 'fila-arriba', nombre: 'Fila arriba', ayuda: 'Una fila nueva encima de esta', chip: '↑', chipClase: 't-lista' });
+    o.push({ id: 'fila-abajo', nombre: 'Fila abajo', ayuda: 'También con Tab en la última celda', chip: '↓', chipClase: 't-lista' });
+    o.push({ id: 'col-izquierda', nombre: 'Columna a la izquierda', ayuda: 'Una columna nueva antes de esta', chip: '←', chipClase: 't-lista' });
+    o.push({ id: 'col-derecha', nombre: 'Columna a la derecha', ayuda: 'Una columna nueva después de esta', chip: '→', chipClase: 't-lista' });
+    o.push({ separador: true });
+    if (!cabeza) o.push({ id: 'quitar-fila', nombre: 'Quitar esta fila', ayuda: 'Borra la fila donde está el cursor', chip: '−', chipClase: 't-crudo' });
+    if (columnas > 1) o.push({ id: 'quitar-col', nombre: 'Quitar esta columna', ayuda: 'Borra la columna donde está el cursor', chip: '−', chipClase: 't-crudo' });
+    o.push({ id: 'quitar-tabla', nombre: 'Quitar la tabla', ayuda: 'Borra la tabla completa', chip: '×', chipClase: 't-crudo' });
+    return o;
+  }
+  function accionTabla(id, celda) {
+    celda = celda || celdaActual();
+    if (!celda) return;
+    var destino = {
+      'fila-arriba': function () { return agregarFila(celda, true); },
+      'fila-abajo': function () { return agregarFila(celda, false); },
+      'col-izquierda': function () { return agregarColumna(celda, true); },
+      'col-derecha': function () { return agregarColumna(celda, false); },
+      'quitar-fila': function () { return quitarFila(celda); },
+      'quitar-col': function () { return quitarColumna(celda); },
+      'quitar-tabla': function () { return quitarTabla(celda); }
+    }[id]();
+    if (destino) ponerCursor(destino, /^quitar/.test(id) && id !== 'quitar-tabla');
+    guardarSeleccion();
+    marcarVacios();
+    actualizarTipo();
+    cambioDoc();
+  }
+  // Tab pasa a la celda siguiente (Mayús+Tab, a la anterior); en la última celda agrega una fila, como en Word.
+  function tabEnTabla(e) {
+    guardarSeleccion();
+    var celda = celdaActual();
+    if (!celda) return;
+    var celdas = Array.prototype.slice.call(celda.closest('table').querySelectorAll('th,td'));
+    var i = celdas.indexOf(celda);
+    if (e.shiftKey) {
+      if (i === 0) return;
+      e.preventDefault();
+      ponerCursor(celdas[i - 1], true);
+    } else if (i < celdas.length - 1) {
+      e.preventDefault();
+      ponerCursor(celdas[i + 1], true);
+    } else {
+      e.preventDefault();
+      ponerCursor(agregarFila(celda, false).parentNode.cells[0], false);
+      guardarSeleccion();
+      marcarVacios();
+      cambioDoc();
+    }
   }
 
   $('doc-imagen').addEventListener('change', function () {
@@ -1652,6 +1793,8 @@
     if (ctrl && e.shiftKey && !e.altKey && /^Digit[0-3]$/.test(e.code)) {
       e.preventDefault();
       aplicarTipo(e.code === 'Digit0' ? 'p' : 'h' + e.code.slice(-1));
+    } else if (e.key === 'Tab' && !ctrl && !e.altKey) {
+      tabEnTabla(e);
     } else if (ctrl && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
       e.preventDefault();
       guardarSeleccion();
@@ -1817,6 +1960,6 @@
     ErrorDatos: ErrorDatos, aClave: aClave, etiquetaDe: etiquetaDe, nombreXml: nombreXml,
     cargarDocumento: cargarDocumento, markdownDelEditor: markdownDelEditor, verVistaDoc: verVistaDoc,
     cargarDatos: cargarDatos, cargarDatosTexto: cargarDatosTexto, verVistaDatos: verVistaDatos, cambiarFormatoDatos: cambiarFormatoDatos,
-    textoDatos: textoDatos, estado: { doc: doc, datos: datos }
+    textoDatos: textoDatos, accionTabla: accionTabla, estado: { doc: doc, datos: datos }
   };
 })();
